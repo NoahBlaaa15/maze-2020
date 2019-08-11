@@ -1,0 +1,379 @@
+//Encoderwerte
+#define enc_vl_a digitalRead(i_vl)
+#define enc_vl_b digitalRead(j_vl)
+#define enc_vr_a digitalRead(i_vr)
+#define enc_vr_b digitalRead(j_vr)
+#define enc_hl_a digitalRead(i_hl)
+#define enc_hl_b digitalRead(j_hl)
+#define enc_hr_a digitalRead(i_hr)
+#define enc_hr_b digitalRead(j_hr)
+
+//Current Status (0 - 3)
+#define curr_vl enc_vl_a*1 + enc_vl_b*2
+#define curr_vr enc_vr_a*1 + enc_vr_b*2
+#define curr_hl enc_hl_a*1 + enc_hl_b*2
+#define curr_hr enc_hr_a*1 + enc_hr_b*2
+
+//Sensorwerte
+#define ir_val_vl analogRead(ir_pin_vl)
+#define ir_val_vr analogRead(ir_pin_vr)
+
+/* 
+   
+   STATUS MAP
+
+   0 => 1 | --
+   0 => 2 | ++
+   1 => 0 | ++
+   1 => 3 | --
+   2 => 0 | --
+   2 => 3 | ++
+   3 => 1 | ++
+   3 => 2 | --
+   
+*/
+
+//Wert der Encoder (-2,147 Mrd bis 2,147 Mrd.)
+long enc_val_vl = 0;
+long enc_val_vr = 0;
+long enc_val_hl = 0;
+long enc_val_hr = 0;
+
+//Sensorpins
+#define ir_pin_vl A6
+#define ir_pin_vr A7
+
+//Pins der Encoder (Grün + Gelb)
+short i_vl = 2;
+short j_vl = 3;
+short i_vr = 18;
+short j_vr = 19;
+short i_hl = 4;
+short j_hl = 5;
+short i_hr = 6;
+short j_hr = 7;
+
+//Pins für die Motortreiber (E = PWM, M = 0/1)
+int e_vl = 8;
+int e_vr = 9;
+int e_hl = 10;
+int e_hr = 11;
+int m_vl = 14;
+int m_vr = 15;
+int m_hl = 16;
+int m_hr = 17;
+
+//Vorheriger Status
+int prev_vl = enc_vl_a*1 + enc_vl_b*2;
+int prev_vr = enc_vr_a*1 + enc_vr_b*2;
+int prev_hl = enc_hl_a*1 + enc_hl_b*2;
+int prev_hr = enc_hr_a*1 + enc_hr_b*2;
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("pls work!");
+
+  //Encoder
+  pinMode(i_vl, INPUT);
+  pinMode(j_vl, INPUT);
+  pinMode(i_vr, INPUT);
+  pinMode(j_vr, INPUT);
+  pinMode(i_hl, INPUT);
+  pinMode(j_hl, INPUT);
+  pinMode(i_hr, INPUT);
+  pinMode(j_hr, INPUT);
+
+  //Sensoren
+  pinMode(ir_pin_vl, INPUT);
+  pinMode(ir_pin_vr, INPUT);
+  
+  pinMode(e_vl, OUTPUT);
+  pinMode(e_vr, OUTPUT);
+  pinMode(e_hl, OUTPUT);
+  pinMode(e_hr, OUTPUT);
+  pinMode(m_vl, OUTPUT);
+  pinMode(m_vr, OUTPUT);
+  pinMode(m_hl, OUTPUT);
+  pinMode(m_hr, OUTPUT); 
+}
+
+void loop() {
+
+  //Werte updaten
+  prev_vl = enc_vl_a*1 + enc_vl_b*2;
+  prev_vr = enc_vr_a*1 + enc_vr_b*2;
+  prev_hl = enc_hl_a*1 + enc_hl_b*2;
+  prev_hr = enc_hr_a*1 + enc_hr_b*2;
+  
+  //Sensorwerte
+  /*Serial.print(ir_val_vl);
+  Serial.print(" - ");
+  Serial.println(ir_val_vr);*/
+
+  forward(200);
+  delay(5000);
+  stop();
+  delay(1000);
+  
+  ///////////// - VL - /////////////
+  
+  //Motor vorne links
+  if(curr_vl != prev_vl){
+    prev_vl = curr_vl;
+  }
+  
+  if(prev_vl == 0 && curr_vl == 1){
+    enc_val_vl--;
+    prev_vl = curr_vl; 
+    print_enc_vl();
+  }
+
+  if(prev_vl == 0 && curr_vl == 2){
+    enc_val_vl++;
+    prev_vl = curr_vl; 
+    print_enc_vl();
+  }
+
+  if(prev_vl == 1 && curr_vl == 0){
+    enc_val_vl++;
+    prev_vl = curr_vl; 
+    print_enc_vl();
+  }
+
+  if(prev_vl == 1 && curr_vl == 3){
+    enc_val_vl--;
+    prev_vl = curr_vl; 
+    print_enc_vl();
+  }
+
+  if(prev_vl == 2 && curr_vl == 0){
+    enc_val_vl--;
+    prev_vl = curr_vl; 
+    print_enc_vl();
+  }
+
+  if(prev_vl == 2 && curr_vl == 3){
+    enc_val_vl++;
+    prev_vl = curr_vl; 
+    print_enc_vl();
+  }
+
+  if(prev_vl == 3 && curr_vl == 1){
+    enc_val_vl++;
+    prev_vl = curr_vl; 
+    print_enc_vl();
+  }
+
+  if(prev_vl == 3 && curr_vl == 2){
+    enc_val_vl--;
+    prev_vl = curr_vl; 
+    print_enc_vl();
+  }
+
+  ///////////// - VR - /////////////
+  
+  //Motor vorne links
+  if(curr_vr != prev_vr){
+    prev_vr = curr_vr;
+  }
+
+  if(prev_vr == 0 && curr_vr == 1){
+    enc_val_vr--;
+    prev_vr = curr_vr; 
+    print_enc_vr();
+  }
+
+  if(prev_vr == 0 && curr_vr == 2){
+    enc_val_vr++;
+    prev_vr = curr_vr; 
+    print_enc_vr();
+  }
+
+  if(prev_vr == 1 && curr_vr == 0){
+    enc_val_vr++;
+    prev_vr = curr_vr; 
+    print_enc_vr();
+  }
+
+  if(prev_vr == 1 && curr_vr == 3){
+    enc_val_vr--;
+    prev_vr = curr_vr; 
+    print_enc_vr();
+  }
+
+  if(prev_vr == 2 && curr_vr == 0){
+    enc_val_vr--;
+    prev_vr = curr_vr; 
+    print_enc_vr();
+  }
+
+  if(prev_vr == 2 && curr_vr == 3){
+    enc_val_vr++;
+    prev_vr = curr_vr; 
+    print_enc_vr();
+  }
+
+  if(prev_vr == 3 && curr_vr == 1){
+    enc_val_vr++;
+    prev_vr = curr_vr; 
+    print_enc_vr();
+  }
+
+  if(prev_vr == 3 && curr_vr == 2){
+    enc_val_vr--;
+    prev_vr = curr_vr; 
+    print_enc_vr();
+  }
+
+  ///////////// - HL - /////////////
+  
+  //Motor vorne links
+  if(curr_hl != prev_hl){
+    prev_hl = curr_hl;
+  }
+
+  if(prev_hl == 0 && curr_hl == 1){
+    enc_val_hl--;
+    prev_hl = curr_hl; 
+    print_enc_hl();
+  }
+
+  if(prev_hl == 0 && curr_hl == 2){
+    enc_val_hl++;
+    prev_hl = curr_hl; 
+    print_enc_hl();
+  }
+
+  if(prev_hl == 1 && curr_hl == 0){
+    enc_val_hl++;
+    prev_hl = curr_hl; 
+    print_enc_hl();
+  }
+
+  if(prev_hl == 1 && curr_hl == 3){
+    enc_val_hl--;
+    prev_hl = curr_hl; 
+    print_enc_hl();
+  }
+
+  if(prev_hl == 2 && curr_hl == 0){
+    enc_val_hl--;
+    prev_hl = curr_hl; 
+    print_enc_hl();
+  }
+
+  if(prev_hl == 2 && curr_hl == 3){
+    enc_val_hl++;
+    prev_hl = curr_hl; 
+    print_enc_hl();
+  }
+
+  if(prev_hl == 3 && curr_hl == 1){
+    enc_val_hl++;
+    prev_hl = curr_hl; 
+    print_enc_hl();
+  }
+
+  if(prev_hl == 3 && curr_hl == 2){
+    enc_val_hl--;
+    prev_hl = curr_hl; 
+    print_enc_hl();
+  }
+
+   ///////////// - HR - /////////////
+  
+  //Motor hinten rechts
+  if(curr_hr != prev_hr){
+    prev_hr = curr_hr;
+  }
+
+  if(prev_hr == 0 && curr_hr == 1){
+    enc_val_hr--;
+    prev_hr = curr_hr; 
+    print_enc_hr();
+  }
+
+  if(prev_hr == 0 && curr_hr == 2){
+    enc_val_hr++;
+    prev_hr = curr_hr; 
+    print_enc_hr();
+  }
+
+  if(prev_hr == 1 && curr_hr == 0){
+    enc_val_hr++;
+    prev_hr = curr_hr; 
+    print_enc_hr();
+  }
+
+  if(prev_hr == 1 && curr_hr == 3){
+    enc_val_hr--;
+    prev_hr = curr_hr; 
+    print_enc_hr();
+  }
+
+  if(prev_hr == 2 && curr_hr == 0){
+    enc_val_hr--;
+    prev_hr = curr_hr; 
+    print_enc_hr();
+  }
+
+  if(prev_hr == 2 && curr_hr == 3){
+    enc_val_hr++;
+    prev_hr = curr_hr; 
+    print_enc_hr();
+  }
+
+  if(prev_hr == 3 && curr_hr == 1){
+    enc_val_hr++;
+    prev_hr = curr_hr; 
+    print_enc_hr();
+  }
+
+  if(prev_hr == 3 && curr_hr == 2){
+    enc_val_hr--;
+    prev_hr = curr_hr; 
+    print_enc_hr();
+  }
+}
+
+void print_enc_vl(){
+  Serial.print("VL: ");
+  Serial.println(enc_val_vl);  
+}
+
+void print_enc_vr(){
+  Serial.print("VR: ");
+  Serial.println(enc_val_vr);  
+}
+
+void print_enc_hl(){
+  Serial.print("HL: ");
+  Serial.println(enc_val_hl);  
+}
+
+void print_enc_hr(){
+  Serial.print("HR: ");
+  Serial.println(enc_val_hr);  
+}
+
+void forward(int speed){
+  analogWrite(e_vl, speed);
+  analogWrite(e_vr, speed);
+  analogWrite(e_hl, speed);
+  analogWrite(e_hr, speed);
+  digitalWrite(m_vl, LOW);
+  digitalWrite(m_hl, HIGH);
+  digitalWrite(m_vr, HIGH);
+  digitalWrite(m_hr, HIGH);
+}
+
+void stop(){
+  analogWrite(e_vl, 0);
+  analogWrite(e_vr, 0);
+  analogWrite(e_hl, 0);
+  analogWrite(e_hr, 0);
+  digitalWrite(m_vl, LOW);
+  digitalWrite(m_vr, LOW);
+  digitalWrite(m_hl, LOW);
+  digitalWrite(m_hr, LOW);
+}

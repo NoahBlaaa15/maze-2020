@@ -1,0 +1,26 @@
+Temperatur:
+	Linke Seite, hinterer Sensor
+	Linke Seite, vorderer Sensor
+	Rechte Seite, vorderer Sensor
+	Rechte Seite, hinterer Sensor
+
+Infrarot:
+	Linke Seite, hinterer Sensor
+	Linke Seite, vorderer Sensor
+	Vorne, linker Sensor
+	Vorne, rechter Sensor
+	Rechte Seite, vorderer Sensor
+	Rechte Seite, hinterer Sensor
+
+Gyro:
+	Neigungswinkel (der für Rampe ja/nein)
+	Rotationswinkel
+
+Grayscale:
+	Unten
+
+Motoren:
+	Linke Seite, hinterer Motor
+	Linke Seite, vorderer Motor
+	Rechte Seite, vorderer Motor
+	Rechte Seite, hinterer Motor

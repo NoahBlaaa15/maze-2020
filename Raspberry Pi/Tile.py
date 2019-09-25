@@ -1,6 +1,17 @@
 class Tile:
+    global counter
+    size = 50
+    counter = 0
 
-    def __init__(self, top, rgt, bot, lft, tpe):
+    def __init__(self, top, rgt, bot, lft):
+        global counter
+        self.id = counter + 1
+        counter += 1
+
+        self.x = None
+        self.y = None
+        self.z = None
+
         self.top = top
         if top is not None:
             self.top.bot = self
@@ -17,23 +28,40 @@ class Tile:
         if lft is not None:
             self.lft.rgt = self
 
+        self.type = None
+        self.visited = False
+        self.neighbours = [self.top, self.rgt, self.bot, self.lft]
+
+    def set_type(self, tpe):
         self.type = tpe
 
-    def set_top(self, top):
-        self.top = top
-        self.top.set_bot(self)
+    def set_top(self, new):
+        new.bot = self
+        self.top = new
 
     def set_rgt(self, rgt):
+        rgt.lft = self
         self.rgt = rgt
-        self.rgt.set_lft(self)
 
     def set_bot(self, bot):
+        bot.top = self
         self.bot = bot
-        self.bot.set_top(self)
 
     def set_lft(self, lft):
+        lft.rgt = self
         self.lft = lft
-        self.lft.set_rgt(self)
+
+    def set_wall(self, orientation, status):
+        if orientation == 'top':
+            self.top = status
+        if orientation == 'rgt':
+            self.rgt = status
+        if orientation == 'bot':
+            self.bot = status
+        if orientation == 'lft':
+            self.lft = status
+        # 0 = keine Wand
+        # 1 = Wand
 
     def has_top(self):
         return self.top is not None
@@ -46,3 +74,14 @@ class Tile:
 
     def has_lft(self):
         return self.lft is not None
+
+    def get_neighbours(self):
+        return [self.top, self.rgt, self.bot, self.lft]
+
+    def set_coordinates(self, x, y, z=0):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def get_coordinates(self):
+        return [self.x, self.y, self.z]

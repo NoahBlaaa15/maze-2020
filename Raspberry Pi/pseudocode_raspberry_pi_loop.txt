@@ -1,0 +1,41 @@
+*******************
+kalkulator library:
+*******************
+
+wenn aktuellerRaum linke Wand Status unbekannt:
+	je nachdem was arduinodatasatz sagt setzen/nicht
+	wenn keine wand:
+		wenn in die Richtung noch kein Tile vorhanden (welches auch unbekannt ist):
+			neues tile erstellen mit y -= 1
+			tile aktuellesTile obere Teil mit neuer linker Tile "verbinden"
+			Nach dahin fahren auf Stack drauf
+
+wenn aktuellerRaum untere Wand Status unbekannt:
+	je nachdem was arduinodatasatz sagt setzen/nicht
+	wenn keine wand:
+		wenn in die Richtung noch kein Tile vorhanden (welches auch unbekannt ist):
+			neues tile erstellen mit x -= 1
+			tile aktuellesTile obere Teil mit neuer unterer Tile "verbinden"
+			Nach dahin fahren auf Stack drauf
+
+wenn aktuellerRaum rechte Wand Status unbekannt:
+	je nachdem was arduinodatasatz sagt setzen/nicht
+	wenn keine wand:
+		wenn in die Richtung noch kein Tile vorhanden (welches auch unbekannt ist):
+			neues tile erstellen mit y += 1
+			tile aktuellesTile obere Teil mit neuer rechter Tile "verbinden"
+			Nach dahin fahren auf Stack drauf
+
+wenn aktuellerRaum obere Wand Status unbekannt:
+	je nachdem was arduinodatasatz sagt setzen/nicht
+	wenn keine wand:
+		wenn in die Richtung noch kein Tile vorhanden (welches auch unbekannt ist):
+			neues tile erstellen mit x += 1
+			tile aktuellesTile obere Teil mit neuer oberer Tile "verbinden"
+			Nach dahin fahren auf Stack drauf
+	
+
+Oberste Stackaufgabe vom Stack nehmen und seperat speichern
+anhand der koordinaten vom aktuellen Raum und vom Zielraum kürzesten weg dahin berechnen
+den weg in seperate aufgabenschritte aufteilen
+an arduino schicken

@@ -2,13 +2,19 @@
 kalkulator library:
 *******************
 
+#TODO: Wand zeugs etc von aktuellerraum (links) auf alle anderen 3 übertragen
+#TODO: Schwarze Kachel check und speicher ganz an den anfang coden
+
 wenn aktuellerRaum linke Wand Status unbekannt:
 	je nachdem was arduinodatasatz sagt setzen/nicht
-	wenn keine wand:
-		wenn in die Richtung noch kein Tile vorhanden (welches auch unbekannt ist):
+	wenn in die Richtung noch kein Tile vorhanden (welches auch unbekannt ist):
+	    wenn keine wand:
 			neues tile erstellen mit y -= 1
 			tile aktuellesTile obere Teil mit neuer linker Tile "verbinden"
 			Nach dahin fahren auf Stack drauf
+		wenn wand:
+		    neue wall erstellen
+		    wandoobjekt mit linker seite der kachel verbinden
 
 wenn aktuellerRaum untere Wand Status unbekannt:
 	je nachdem was arduinodatasatz sagt setzen/nicht

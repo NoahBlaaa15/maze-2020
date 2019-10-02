@@ -6,14 +6,6 @@ from tkinter import *
 
 win = Tk()
 
-
-
-def exitProgram():
-	print("Exit Button pressed")
-
-	win.quit()	
-
-
 win.title("First GUI")
 win.geometry('800x480')
 

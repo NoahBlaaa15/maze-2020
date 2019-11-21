@@ -21,6 +21,7 @@ void loop() {
       if (message == "pls") {
         //Hier halt sonst Daten messen
         Serial.write("ey, yo habs gelesen#");
+        message = "";
       }
       if (message == "fahren") {
         //Fahren

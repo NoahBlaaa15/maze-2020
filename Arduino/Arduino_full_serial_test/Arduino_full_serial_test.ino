@@ -11,7 +11,6 @@ void loop() {
       message = Serial.readStringUntil('#');
       if (message == "start") {
         status_now = "running";
-        break;
       }
     }
   }
@@ -21,11 +20,11 @@ void loop() {
       message = Serial.readStringUntil('#');
       if (message == "pls") {
         //Hier halt sonst Daten messen
-        Serial.write("ey, yo habs gelesen");
+        Serial.write("ey, yo habs gelesen#");
       }
       if (message == "fahren") {
         //Fahren
-        Serial.write("angekommen");
+        Serial.write("angekommen#");
       }
     }
   }

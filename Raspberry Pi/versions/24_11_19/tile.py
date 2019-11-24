@@ -1,9 +1,8 @@
-class Tile:
-    global counter
-    size = 50
-    counter = 0
+counter = 0
 
-    def __init__(self, top, rgt, bot, lft):
+class Tile:
+
+    def __init__(self, top=None, rgt=None, bot=None, lft=None):
         global counter
         self.id = counter + 1
         counter += 1
@@ -11,6 +10,11 @@ class Tile:
         self.x = None
         self.y = None
         self.z = None
+        if self.id == 1:
+            self.x = 0
+            self.y = 0
+            self.z = 0
+
         self.type = 'standard'
 
         self.top = top

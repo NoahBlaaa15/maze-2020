@@ -1,7 +1,6 @@
-#Arduinodata library
-#TODO Dictionaryeinträge zu eigenen, 1 Item Dictionarys machen(-> data['temp']['leftback'] für Wert des Thermometers links hinten)
+# TODO Change dictionary entries to own 1 item dictionaries(-> data['temp']['leftback'] z. B.)
 
-def decode(serial_string):    
+def decode(serial_string):
     decoded_string = serial_string.replace('\n', '')
     decoded_string = decoded_string.replace('{', '')
     decoded_string = decoded_string.replace('}', '')
@@ -18,7 +17,7 @@ def decode(serial_string):
     instance = None
     second_instance = 0
     position = None
-    
+
     for item in range(len(decoded_list)):
         if decoded_list[item] == 'temp':
             decoded_dictionary['temp'] = {}
@@ -44,7 +43,7 @@ def decode(serial_string):
             decoded_dictionary['encoder'] = {}
             instance = 'encoder'
             continue
-            
+
         if instance == 'temp':
             if second_instance == 0:
                 position = 'left_back'
@@ -119,22 +118,21 @@ def decode(serial_string):
     return decoded_dictionary
 
 
-
 def analyze(data, which_type):
     if which_type == 'all':
-        threshhold = 10
+        threshold = 10
         walls = {}
-        if data['ir']['left_back'] <= threshhold and data['ir']['left_front'] <= threshhold:
+        if data['ir']['left_back'] <= threshold and data['ir']['left_front'] <= threshold:
             walls['left'] = 1
         else:
             walls['left'] = 0
-            
-        if data['ir']['front_left'] <= threshhold and data['ir']['front_left'] <= threshhold:
+
+        if data['ir']['front_left'] <= threshold and data['ir']['front_left'] <= threshold:
             walls['front'] = 1
         else:
             walls['front'] = 0
 
-        if data['ir']['right_front'] <= threshhold and data['ir']['right_back'] <= threshhold:
+        if data['ir']['right_front'] <= threshold and data['ir']['right_back'] <= threshold:
             walls['rigth'] = 1
         else:
             walls['rigth'] = 0
@@ -145,7 +143,7 @@ def analyze(data, which_type):
             victims['type'] = 'heat'
             victims['direction'] = 'left'
             victims['specs'] = None
-            
+
         elif data['temp']['right_front'] >= temp_border and data['temp']['right_back'] >= temp_border:
             victims['type'] = 'heat'
             victims['direction'] = 'right'
@@ -173,23 +171,23 @@ def analyze(data, which_type):
 
         environment['rotation'] = data['gyro']['rotation']
 
-        return(walls, victims, environment, data['encoder'])
-    
-        
+        return (walls, victims, environment, data['encoder'])
+
+
     elif which_type == 'walls':
-        threshhold = 10
+        threshold = 10
         walls = {}
-        if data['ir']['left_back'] <= threshhold and data['ir']['left_front'] <= threshhold:
+        if data['ir']['left_back'] <= threshold and data['ir']['left_front'] <= threshold:
             walls['left'] = 1
         else:
             walls['left'] = 0
-            
-        if data['ir']['front_left'] <= threshhold and data['ir']['front_left'] <= threshhold:
+
+        if data['ir']['front_left'] <= threshold and data['ir']['front_left'] <= threshold:
             walls['front'] = 1
         else:
             walls['front'] = 0
 
-        if data['ir']['right_front'] <= threshhold and data['ir']['right_back'] <= threshhold:
+        if data['ir']['right_front'] <= threshold and data['ir']['right_back'] <= threshold:
             walls['rigth'] = 1
         else:
             walls['rigth'] = 0
@@ -204,7 +202,7 @@ def analyze(data, which_type):
             victims['type'] = 'heat'
             victims['direction'] = 'left'
             victims['specs'] = None
-            
+
         elif data['temp']['right_front'] >= temp_border and data['temp']['right_back'] >= temp_border:
             victims['type'] = 'heat'
             victims['direction'] = 'right'
@@ -241,4 +239,3 @@ def analyze(data, which_type):
 
     elif which_type == 'motors':
         return data['encoder']
-        

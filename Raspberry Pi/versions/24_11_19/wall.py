@@ -22,3 +22,9 @@ class Wall:
 
     def get_victim(self):
         return [self.victim_type, self.calculate_rescue_kits()]
+
+    def __str__(self):
+        return "Wall. Just a wall. There is nothing more here. Quit reading! Now!"
+
+    def __repr__(self):
+        return "Wall. Just a wall. There is nothing more here. Quit reading! Now!"

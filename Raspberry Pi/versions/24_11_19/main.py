@@ -8,6 +8,8 @@ import arduinodata
 import history
 import stack
 import custom_print
+import logic
+import sys
 
 #SETUP
 
@@ -51,38 +53,7 @@ while True:
         print(i, motorsdata[i])
     # todo analyse camera data
 
-    # todo check rotation values
-        # todo if not correct send adjustment commands
-    if environmentdata['floor'] == 'black':
-        print("Black tile")
-        current_tile.set_type('black')
-        print("Changed type")
-        current_tile.set_top(wall.Wall())
-        print("Top locked")
-        current_tile.set_rgt(wall.Wall())
-        print("Right locked")
-        current_tile.set_but(wall.Wall())
-        print("Down locked")
-        current_tile.set_lft(wall.Wall())
-        print("Left locked")
-        
-        tasks.add(history.get_last_tile())
-        print("Added reverse to stack")
-        print(tasks)
-        print(tasks.all())
-        # todo goto driving section
-        
-    # todo check for ramp
-        # todo enter ramp driving mode
-    # todo check for undefined tiles around current tile
-        # todo create missing tiles and set walls depending on the data received from arduino
-        # todo check if there is a wall and if tile is already visited for new tiles
-        # todo add visiting said tile to stack
-    # todo check for victims
-        # todo modify and check the walls based on this information
-        # todo deploy kits if not yet rescued
-    # todo check for checkpoint
-        # todo change last visited tile
+    current_tile, tasks = logic.calculate_action(wallsdata, victimsdata, environmentdata, motorsdata, current_tile, tasks)
     
     try:
         task_to_do = tasks.get()
@@ -92,7 +63,7 @@ while True:
         print("Failed to take task from stack")
         print("Ending log")
         custom_print.stop()
-        # todo end run
+        sys.exit()
     # todo decode task to exact instructions
     # todo send these instructions to arduino
     # todo start taking photos with around 15 frames per second

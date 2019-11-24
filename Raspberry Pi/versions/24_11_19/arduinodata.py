@@ -171,7 +171,7 @@ def analyze(data, which_type):
 
         environment['rotation'] = data['gyro']['rotation']
 
-        return (walls, victims, environment, data['encoder'])
+        return walls, victims, environment, data['encoder']
 
 
     elif which_type == 'walls':
@@ -191,6 +191,7 @@ def analyze(data, which_type):
             walls['rigth'] = 1
         else:
             walls['rigth'] = 0
+        walls['back'] = 0
 
         return walls
 

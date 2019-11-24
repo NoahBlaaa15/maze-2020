@@ -93,6 +93,18 @@ class Tile:
     def has_lft(self):
         return self.lft is not None
 
+    def get_top(self):
+        return self.top
+
+    def get_rgt(self):
+        return self.rgt
+
+    def get_bot(self):
+        return self.bot
+
+    def get_lft(self):
+        return self.lft
+
     def get_neighbours(self):
         return [self.top, self.rgt, self.bot, self.lft]
 

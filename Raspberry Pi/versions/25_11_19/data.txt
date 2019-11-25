@@ -1,0 +1,3 @@
+direction = 3
+wanted_rotation = 0
+tile_counter = 0

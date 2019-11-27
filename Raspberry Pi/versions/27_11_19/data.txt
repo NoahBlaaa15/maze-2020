@@ -1,0 +1,6 @@
+direction = 0
+wanted_rotation = 0
+tile_counter = 0
+last_checkpoint_x = 0
+last_checkpoint_y = 0
+last_checkpoint_z = 0

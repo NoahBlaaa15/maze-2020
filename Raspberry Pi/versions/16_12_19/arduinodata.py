@@ -204,7 +204,7 @@ def decode(serial_string):
             print('Decoded dictionary looks like this:')
             print(decoded_dictionary)
             continue
-            
+
         if instance == 'touch':
             print('In instance touch')
             if second_instance == 0:

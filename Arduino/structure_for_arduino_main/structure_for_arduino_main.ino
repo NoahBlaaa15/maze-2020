@@ -8,6 +8,16 @@ volatile byte state = LOW;
 
 String message;
 
+const int threshold_tile = 500;
+int target_posLH = 0;
+int target_posLV = 0;
+int target_posRV = 0;
+int target_posRH = 0;
+long newPositionLH;
+long newPositionLV;
+long newPositionRV;
+long newPositionRH;
+
 const byte IRsensorLinksHinten = UNDEFINED;
 const byte IRsensorLinksVorne = UNDEFINED;
 const byte IRsensorVorneLinks = UNDEFINED;
@@ -30,10 +40,10 @@ Encoder EncoderRechtsHinten(UNDEFINED,UNDEFINED);
 int realPosRH = 0;
 long oldPositionRH  = -999;
 
-int ELH = UNDEFINED;
-int ELV = UNDEFINED;
-int ERV = UNDEFINED;
-int ERH = UNDEFINED;
+int ELH = UNDEFINED;//MotorLinksHinten    Enable Pin
+int ELV = UNDEFINED;//MotorLinksVorne     Enable Pin
+int ERV = UNDEFINED;//MotorRechtsVorne    Enable Pin
+int ERH = UNDEFINED;//MotorRechtsHinten   Enable Pin
 
 int MLH = UNDEFINED;
 int MLV = UNDEFINED;
@@ -59,10 +69,10 @@ void setup() {
   //Init all sensors
   Serial.begin(9600);
 
-  pinMode(MLH, OUTPUT);
-  pinMode(MLV, OUTPUT);
-  pinMode(MRV, OUTPUT);
-  pinMode(MRH, OUTPUT);
+  pinMode(MLH, OUTPUT); //MotorLinksHinten    Signal Pin.
+  pinMode(MLV, OUTPUT); //MotorLinksVorne     Signal Pin.
+  pinMode(MRV, OUTPUT); //MotorRechtsVorne    Signal Pin.
+  pinMode(MRH, OUTPUT); //MotorRechtsHinten   Signal Pin.
 
   Wire.begin();
   Wire.beginTransmission(MPU_ADDR); // Begins a transmission to the I2C slave (GY-521 board)
@@ -150,6 +160,10 @@ void interrupt_detected() {
     }
     else if (message == "straight") {
       //Fahren und encoder die ganze Zeit mit updaten
+        target_posLH = realPosLH + threshold_tile;
+        target_posLV = realPosLV + threshold_tile;
+        target_posRV = realPosRV + threshold_tile;
+        target_posRH = realPosRH + threshold_tile;
         digitalWrite(MLH,HIGH);
         digitalWrite(MLV,HIGH);
         digitalWrite(MRV,HIGH);
@@ -159,17 +173,62 @@ void interrupt_detected() {
         analogWrite(ERV, 255);   //PWM Speed Control
         analogWrite(ERH, 255);   //PWM Speed Control
         while true {
-          long newPositionLinksHinten = EncoderLinksHinten.read();
-          long newPositionLinksVorne = EncoderLinksVorne.read();
-          long newPositionRechtsVorne = EncoderRechtsVorne.read();
-          long newPositionRechtsHinten = EncoderRechtsHinten.read();
-          oldPositionLH = newPositionLinksHinten;
-          oldPositionLV = newPositionLinksVorne;
-          oldPositionRV = newPositionRechtsVorne;
-          oldPositionRH = newPositionRechtsHinten;
-          realPos = realPos + 1;
-          if (realPosLH == target_posLH) {
-            //Speed 0 and break
+          //Motor links hinten auslesen
+          if (newPositionLH != oldPositionLH) {
+            long newPositionLH = EncoderLinksHinten.read();
+            oldPositionLH = newPositionLH;
+            realPosLH = realPosLH + 1;
+          }
+          //Motor links vorne auslesen
+          if (newPositionLV != oldPositionLV) {
+            long newPositionLV = EncoderLinksVorne.read();
+            oldPositionLV = newPositionLV;
+            realPosLV = realPosLV + 1;
+          }
+          //Motor rechts vorne auslesen
+          if (newPositionRV != oldPositionRV) {
+            long newPositionRV = EncoderRechtsVorne.read();
+            oldPositionRV = newPositionRV;
+            realPosRV = realPosRV + 1;
+          }
+          //Motor rechts hinten auslesen
+          if (newPositionRH != oldPositionRH) {
+            long newPositionRH = EncoderRechtsHinten.read();
+            oldPositionRH = newPositionRH;
+            realPosRH = realPosRH + 1;
+          }
+
+          //Ist Motor links hinten am Ziel?
+          if (realPosLH >= target_posLH) {
+            //Speed 0
+            digitalWrite(MLH,LOW);
+            analogWrite(ELH, 0);
+            realPosLH = target_posLH;
+          }
+          //Ist Motor links vorne am Ziel?
+          if (realPosLV >= target_posLV) {
+            //Speed 0
+            digitalWrite(MLV,LOW);
+            analogWrite(ELV, 0);
+            realPosLV = target_posLV;
+          }
+          //Ist Motor rechts vorne am Ziel?
+          if (realPosRV >= target_posRV) {
+            //Speed 0
+            digitalWrite(MRV,LOW);
+            analogWrite(ERV, 0);
+            realPosRV = target_posRV;
+          }
+          //Ist Motor rechts vorne am Ziel?
+          if (realPosRH >= target_posRH) {
+            //Speed 0
+            digitalWrite(MRH,LOW);
+            analogWrite(ERH, 0);
+            realPosRH = target_posRH;
+          }
+          //Sind alle am Ziel?
+          if (realPosLH == target_posLH && realPosLV == target_posLV && realPosRV == target_posRV && realposRH == target_posRH) {
+            break;
           }
         }
       Serial.write("angekommen#");

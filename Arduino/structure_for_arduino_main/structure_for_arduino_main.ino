@@ -27,6 +27,8 @@ const byte IRsensoRechtsHinten = UNDEFINED;
 
 const byte gray1 = UNDEFINED;
 
+const byte button1 = UNDEFINED;
+
 Encoder EncoderLinksHinten(UNDEFINED,UNDEFINED);
 int realPosLH = 0;
 long oldPositionLH  = -999;
@@ -60,6 +62,21 @@ char* convert_int16_to_str(int16_t i) { // converts int16 to string. Moreover, r
   return tmp_str;
 }
 
+int IRlinkshinten = 0;
+int IRlinksvorne = 0;
+int IRvornelinks = 0;
+int IRvornerechts = 0;
+int IRrechtsvorne = 0;
+int IRrechtshinten = 0;
+
+int gyro_x = 0;
+int gyro_y = 0;
+int gyro_z = 0;
+
+int grayscale = 0;
+
+int touch = 0;
+
 void setup() {
   //Configure the interruptPin for interrupts
   pinMode(interruptPin, INPUT_PULLUP);
@@ -73,6 +90,8 @@ void setup() {
   pinMode(MLV, OUTPUT); //MotorLinksVorne     Signal Pin.
   pinMode(MRV, OUTPUT); //MotorRechtsVorne    Signal Pin.
   pinMode(MRH, OUTPUT); //MotorRechtsHinten   Signal Pin.
+  
+  pinMode(touch1, INPUT);
 
   Wire.begin();
   Wire.beginTransmission(MPU_ADDR); // Begins a transmission to the I2C slave (GY-521 board)
@@ -95,6 +114,7 @@ void setup() {
 
 void loop() {  
   read_data();
+  delay(10);
 }
 
 void read_data() {
@@ -107,17 +127,17 @@ void read_data() {
 
 void read_ir() {
   float lh = analogRead(IRsensorLinksHinten)*0.0048828125;
-  int IRlinkshinten = 13*pow(lh, -1);
+  IRlinkshinten = 13*pow(lh, -1);
   float lv = analogRead(IRsensorLinksVorne)*0.0048828125;
-  int IRlinksvorne = 13*pow(lv, -1);
+  IRlinksvorne = 13*pow(lv, -1);
   float vl = analogRead(IRsensorVorneLinks)*0.0048828125;
-  int IRvornelinks = 13*pow(vl, -1);
+  IRvornelinks = 13*pow(vl, -1);
   float vr = analogRead(IRsensorVorneRechts)*0.0048828125;
-  int IRvornerechts = 13*pow(vr, -1);
+  IRvornerechts = 13*pow(vr, -1);
   float rv = analogRead(IRsensorRechtsVorne)*0.0048828125;
-  int IRrechtsvorne = 13*pow(rv, -1);
+  IRrechtsvorne = 13*pow(rv, -1);
   float rh = analogRead(IRsensorRechtsHinten)*0.0048828125;
-  int IRrechtshinten = 13*pow(rh, -1);
+  IRrechtshinten = 13*pow(rh, -1);
 }
 
 void read_gyro() {
@@ -141,12 +161,11 @@ void read_temperature() {
 }
 
 void read_grayscale() {
-  val=analogRead(gray1);
+  grayscale = analogRead(gray1);
 }
 
 void read_touch() {
-  //read touch values
-  //return touch values
+  touch = digitalRead(button1);
 }
 
 void interrupt_detected() {
@@ -155,7 +174,7 @@ void interrupt_detected() {
     message = Serial.readStringUntil('#');
     if (message == "pls") {
       //Daten formatieren
-      Serial.write(/*Hier alle Daten rein*/);
+      Serial.write("[ "IRsensorLinksHinten", "IRsensorLinksVorne", "IRsensorVorneLinks", "IRsensorVorneRechts", "IRsensorRechtsVorne", "IRsensorRechtsHinten", "gyro_x", "gyro_y", "gyro_z", "grayscale", "touch" ]");
       message = "";
     }
     else if (message == "straight") {

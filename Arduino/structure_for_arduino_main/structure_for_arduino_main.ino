@@ -1,5 +1,4 @@
 #include "Wire.h"
-#include <Encoder.h>
 
 //Pin where interrupts happen
 const byte interruptPin = 2;
@@ -18,27 +17,23 @@ long newPositionLV;
 long newPositionRV;
 long newPositionRH;
 
-const byte IRsensorLinksHinten = UNDEFINED;
-const byte IRsensorLinksVorne = UNDEFINED;
-const byte IRsensorVorneLinks = UNDEFINED;
-const byte IRsensorVorneRechts = UNDEFINED;
-const byte IRsensorRechtsVorne = UNDEFINED;
-const byte IRsensoRechtsHinten = UNDEFINED;
-
 const byte gray1 = UNDEFINED;
 
 const byte button1 = UNDEFINED;
 
-Encoder EncoderLinksHinten(UNDEFINED,UNDEFINED);
+const int EncoderLinksHinten = 12;
 int realPosLH = 0;
 long oldPositionLH  = -999;
-Encoder EncoderLinksVorne(UNDEFINED,UNDEFINED);
+
+const int EncoderLinksVorne = 12;
 int realPosLV = 0;
 long oldPositionLV  = -999;
-Encoder EncoderRechtsVorne(UNDEFINED,3UNDEFINED);
+
+const int EncoderRechtsVorne = 12;
 int realPosRV = 0;
 long oldPositionRV  = -999;
-Encoder EncoderRechtsHinten(UNDEFINED,UNDEFINED);
+
+const int EncoderRechtsHinten = 12;
 int realPosRH = 0;
 long oldPositionRH  = -999;
 
@@ -52,6 +47,7 @@ int MLV = UNDEFINED;
 int MRV = UNDEFINED;
 int MRH = UNDEFINED;
 
+const int MINI_ADDR = 0x1F;
 const int MPU_ADDR = 0x68;// I2C address of the MPU-6050.
 int16_t accelerometer_x, accelerometer_y, accelerometer_z; // variables for accelerometer raw data
 int16_t gyro_x, gyro_y, gyro_z; // variables for gyro raw data
@@ -64,8 +60,7 @@ char* convert_int16_to_str(int16_t i) { // converts int16 to string. Moreover, r
 
 int IRlinkshinten = 0;
 int IRlinksvorne = 0;
-int IRvornelinks = 0;
-int IRvornerechts = 0;
+int IRvorne = 0;
 int IRrechtsvorne = 0;
 int IRrechtshinten = 0;
 
@@ -126,18 +121,14 @@ void read_data() {
 }
 
 void read_ir() {
-  float lh = analogRead(IRsensorLinksHinten)*0.0048828125;
-  IRlinkshinten = 13*pow(lh, -1);
-  float lv = analogRead(IRsensorLinksVorne)*0.0048828125;
-  IRlinksvorne = 13*pow(lv, -1);
-  float vl = analogRead(IRsensorVorneLinks)*0.0048828125;
-  IRvornelinks = 13*pow(vl, -1);
-  float vr = analogRead(IRsensorVorneRechts)*0.0048828125;
-  IRvornerechts = 13*pow(vr, -1);
-  float rv = analogRead(IRsensorRechtsVorne)*0.0048828125;
-  IRrechtsvorne = 13*pow(rv, -1);
-  float rh = analogRead(IRsensorRechtsHinten)*0.0048828125;
-  IRrechtshinten = 13*pow(rh, -1);
+  Wire.beginTransmission();
+  Wire.requestFrom(MINI_ADDR, 5, true);
+  IRlinkshinten = Wire.read();
+  IRlinksvorne = Wire.read();
+  IRvorne = Wire.read();
+  IRrechtsvorne = Wire.read();
+  IRrechtshinten = Wire.read();
+  Wire.endTransmission();
 }
 
 void read_gyro() {

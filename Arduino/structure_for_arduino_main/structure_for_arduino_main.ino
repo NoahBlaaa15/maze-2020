@@ -1,51 +1,46 @@
 #include "Wire.h"
 
-//Pin where interrupts happen
-const byte interruptPin = 2;
-//Variable for status of interruptPin
-volatile byte state = LOW;
-
 String message;
 
-const int threshold_tile = 500;
-int target_posLH = 0;
-int target_posLV = 0;
-int target_posRV = 0;
-int target_posRH = 0;
-long newPositionLH;
-long newPositionLV;
-long newPositionRV;
-long newPositionRH;
+const byte gray1 = A0;
 
-const byte gray1 = UNDEFINED;
+const byte button1 = 27;
 
-const byte button1 = UNDEFINED;
+const int threshold_tile = 25;
 
-const int EncoderLinksHinten = 12;
+const int EncoderLH = 15;
 int realPosLH = 0;
-long oldPositionLH  = -999;
+long oldPositionLH  = 0;
+long newPositionLH;
+int target_posLH;
 
-const int EncoderLinksVorne = 12;
+const int EncoderLV = 14;
 int realPosLV = 0;
-long oldPositionLV  = -999;
+long oldPositionLV  = 0;
+long newPositionLV;
+int target_posLV;
 
-const int EncoderRechtsVorne = 12;
+const int EncoderRV = 11;
 int realPosRV = 0;
-long oldPositionRV  = -999;
+long oldPositionRV  = 0;
+long newPositionRV;
+int target_posRV;
 
-const int EncoderRechtsHinten = 12;
+const int EncoderRH = 10;
 int realPosRH = 0;
-long oldPositionRH  = -999;
+long oldPositionRH  = 0;
+long newPositionRH;
+int target_posRH;
 
-int ELH = UNDEFINED;//MotorLinksHinten    Enable Pin
-int ELV = UNDEFINED;//MotorLinksVorne     Enable Pin
-int ERV = UNDEFINED;//MotorRechtsVorne    Enable Pin
-int ERH = UNDEFINED;//MotorRechtsHinten   Enable Pin
+int MLH = 4;//MotorLinksHinten    Enable Pin
+int MLV = 8;//MotorLinksVorne     Enable Pin
+int MRV = 1;//MotorRechtsVorne    Enable Pin
+int MRH = 5;//MotorRechtsHinten   Enable Pin
 
-int MLH = UNDEFINED;
-int MLV = UNDEFINED;
-int MRV = UNDEFINED;
-int MRH = UNDEFINED;
+int ELH = 2;
+int ELV = 6;
+int ERV = 3;
+int ERH = 7;
 
 const int MINI_ADDR = 0x1F;
 const int MPU_ADDR = 0x68;// I2C address of the MPU-6050.
@@ -58,59 +53,15 @@ char* convert_int16_to_str(int16_t i) { // converts int16 to string. Moreover, r
   return tmp_str;
 }
 
-int IRlinkshinten = 0;
-int IRlinksvorne = 0;
-int IRvorne = 0;
-int IRrechtsvorne = 0;
-int IRrechtshinten = 0;
-
-int gyro_x = 0;
-int gyro_y = 0;
-int gyro_z = 0;
+volatile int IRlinkshinten = 0;
+volatile int IRlinksvorne = 0;
+volatile int IRvorne = 0;
+volatile int IRrechtsvorne = 0;
+volatile int IRrechtshinten = 0;
 
 int grayscale = 0;
 
 int touch = 0;
-
-void setup() {
-  //Configure the interruptPin for interrupts
-  pinMode(interruptPin, INPUT_PULLUP);
-  //Attach the interrupt to the interrupt pin and connect with the interrupt function
-  attachInterrupt(digitalPinToInterrupt(interruptPin), interrupt_detected, RISING);
-  
-  //Init all sensors
-  Serial.begin(9600);
-
-  pinMode(MLH, OUTPUT); //MotorLinksHinten    Signal Pin.
-  pinMode(MLV, OUTPUT); //MotorLinksVorne     Signal Pin.
-  pinMode(MRV, OUTPUT); //MotorRechtsVorne    Signal Pin.
-  pinMode(MRH, OUTPUT); //MotorRechtsHinten   Signal Pin.
-  
-  pinMode(touch1, INPUT);
-
-  Wire.begin();
-  Wire.beginTransmission(MPU_ADDR); // Begins a transmission to the I2C slave (GY-521 board)
-  Wire.write(0x6B); // PWR_MGMT_1 register
-  Wire.write(0); // set to zero (wakes up the MPU-6050)
-  Wire.endTransmission(true);
-  
-  //Wait until start command from raspberry pi arrives (serial)
-  while (Serial.available() == 0) {
-    continue;
-
-  if (Serial.available()){
-      message = Serial.readStringUntil('#');
-      if (message == "start") {
-        break;
-      }
-
-  }
-}
-
-void loop() {  
-  read_data();
-  delay(10);
-}
 
 void read_data() {
   read_ir();
@@ -121,7 +72,6 @@ void read_data() {
 }
 
 void read_ir() {
-  Wire.beginTransmission();
   Wire.requestFrom(MINI_ADDR, 5, true);
   IRlinkshinten = Wire.read();
   IRlinksvorne = Wire.read();
@@ -159,13 +109,17 @@ void read_touch() {
   touch = digitalRead(button1);
 }
 
-void interrupt_detected() {
+void serialEvent() {
   //Listen on serial port for command
-  if (Serial.available()) {
+  Serial.println("interrupt");
+  while(Serial.available()) {
     message = Serial.readStringUntil('#');
+    Serial.println(message);
     if (message == "pls") {
       //Daten formatieren
-      Serial.write("[ "IRsensorLinksHinten", "IRsensorLinksVorne", "IRsensorVorneLinks", "IRsensorVorneRechts", "IRsensorRechtsVorne", "IRsensorRechtsHinten", "gyro_x", "gyro_y", "gyro_z", "grayscale", "touch" ]");
+        read_data();
+        delay(10);
+      Serial.println(String("[ " + String(IRlinkshinten) + ", " + String(IRlinksvorne) + ", " + String(IRvorne) + ", " + String(IRrechtsvorne) + ", " + String(IRrechtshinten) + ", "+gyro_x+", "+gyro_y+", "+gyro_z+", "+grayscale+", "+touch+" ]"));
       message = "";
     }
     else if (message == "straight") {
@@ -178,34 +132,42 @@ void interrupt_detected() {
         digitalWrite(MLV,HIGH);
         digitalWrite(MRV,HIGH);
         digitalWrite(MRH,HIGH);
-        analogWrite(ELH, 255);   //PWM Speed Control
-        analogWrite(ELV, 255);   //PWM Speed Control
-        analogWrite(ERV, 255);   //PWM Speed Control
-        analogWrite(ERH, 255);   //PWM Speed Control
-        while true {
+        analogWrite(ELH, 230);   //PWM Speed Control
+        analogWrite(ELV, 230);   //PWM Speed Control
+        analogWrite(ERV, 185);   //PWM Speed Control
+        analogWrite(ERH, 185);   //PWM Speed Control
+        while(true) {
           //Motor links hinten auslesen
+          newPositionLH = digitalRead(EncoderLH);
           if (newPositionLH != oldPositionLH) {
-            long newPositionLH = EncoderLinksHinten.read();
             oldPositionLH = newPositionLH;
             realPosLH = realPosLH + 1;
+            Serial.print("LH: ");
+            Serial.println(realPosLH);
           }
           //Motor links vorne auslesen
+          newPositionLV = digitalRead(EncoderLV);
           if (newPositionLV != oldPositionLV) {
-            long newPositionLV = EncoderLinksVorne.read();
             oldPositionLV = newPositionLV;
             realPosLV = realPosLV + 1;
+            Serial.print("LV: ");
+            Serial.println(realPosLV);
           }
           //Motor rechts vorne auslesen
+          newPositionRV = digitalRead(EncoderRV);
           if (newPositionRV != oldPositionRV) {
-            long newPositionRV = EncoderRechtsVorne.read();
             oldPositionRV = newPositionRV;
             realPosRV = realPosRV + 1;
+            Serial.print("RV: ");
+            Serial.println(realPosRV);
           }
           //Motor rechts hinten auslesen
+          newPositionLH = digitalRead(EncoderRH);
           if (newPositionRH != oldPositionRH) {
-            long newPositionRH = EncoderRechtsHinten.read();
             oldPositionRH = newPositionRH;
             realPosRH = realPosRH + 1;
+            Serial.print("RH: ");
+            Serial.println(realPosRH);
           }
 
           //Ist Motor links hinten am Ziel?
@@ -214,6 +176,7 @@ void interrupt_detected() {
             digitalWrite(MLH,LOW);
             analogWrite(ELH, 0);
             realPosLH = target_posLH;
+            Serial.println("LINKS HINTEN IST DA!!!");
           }
           //Ist Motor links vorne am Ziel?
           if (realPosLV >= target_posLV) {
@@ -221,6 +184,7 @@ void interrupt_detected() {
             digitalWrite(MLV,LOW);
             analogWrite(ELV, 0);
             realPosLV = target_posLV;
+            Serial.println("LINKS VORNE IST DA!!!");
           }
           //Ist Motor rechts vorne am Ziel?
           if (realPosRV >= target_posRV) {
@@ -228,16 +192,35 @@ void interrupt_detected() {
             digitalWrite(MRV,LOW);
             analogWrite(ERV, 0);
             realPosRV = target_posRV;
+            Serial.println("RECHTS VORNE IST DA!!!");
           }
-          //Ist Motor rechts vorne am Ziel?
+          //Ist Motor rechts hinten am Ziel?
           if (realPosRH >= target_posRH) {
             //Speed 0
             digitalWrite(MRH,LOW);
             analogWrite(ERH, 0);
             realPosRH = target_posRH;
+            Serial.println("RECHTS HINTEN IST DA!!!");
           }
           //Sind alle am Ziel?
-          if (realPosLH == target_posLH && realPosLV == target_posLV && realPosRV == target_posRV && realposRH == target_posRH) {
+          if (realPosLH == target_posLH || realPosLV == target_posLV || realPosRV == target_posRV || realPosRH == target_posRH) {
+            digitalWrite(MRH,LOW);
+            analogWrite(ERH, 0);
+            realPosRH = target_posRH;
+
+            digitalWrite(MRV,LOW);
+            analogWrite(ERV, 0);
+            realPosRV = target_posRV;
+
+            digitalWrite(MLH,LOW);
+            analogWrite(ELH, 0);
+            realPosLH = target_posLH;
+
+            digitalWrite(MLV,LOW);
+            analogWrite(ELV, 0);
+            realPosLV = target_posLV;
+            
+            Serial.println("Alle da!");
             break;
           }
         }
@@ -246,40 +229,41 @@ void interrupt_detected() {
     }
     else if (message.substring(0, 4) == "turn") {
       int degrees = message.substring(4).toInt();
-      target_posLH = realPosLH + threshold_tile;
-      target_posLV = realPosLV + threshold_tile;
-      target_posRV = realPosRV + threshold_tile;
-      target_posRH = realPosRH + threshold_tile;
-      digitalWrite(MLH,LOW);
-      digitalWrite(MLV,LOW);
-      digitalWrite(MRV,HIGH);
-      digitalWrite(MRH,HIGH);
-      analogWrite(ELH, 255);   //PWM Speed Control
-      analogWrite(ELV, 255);   //PWM Speed Control
-      analogWrite(ERV, 255);   //PWM Speed Control
-      analogWrite(ERH, 255);   //PWM Speed Control
-      while true {
+      //Fahren und encoder die ganze Zeit mit updaten
+        target_posLH = realPosLH + threshold_tile;
+        target_posLV = realPosLV + threshold_tile;
+        target_posRV = realPosRV + threshold_tile;
+        target_posRH = realPosRH + threshold_tile;
+        digitalWrite(MLH,HIGH);
+        digitalWrite(MLV,HIGH);
+        digitalWrite(MRV,LOW);
+        digitalWrite(MRH,LOW);
+        analogWrite(ELH, 120);   //PWM Speed Control
+        analogWrite(ELV, 120);   //PWM Speed Control
+        analogWrite(ERV, 120);   //PWM Speed Control
+        analogWrite(ERH, 120);   //PWM Speed Control
+        while(true) {
           //Motor links hinten auslesen
+          newPositionLH = digitalRead(EncoderLH);
           if (newPositionLH != oldPositionLH) {
-            long newPositionLH = EncoderLinksHinten.read();
             oldPositionLH = newPositionLH;
             realPosLH = realPosLH + 1;
           }
           //Motor links vorne auslesen
+          newPositionLV = digitalRead(EncoderLV);
           if (newPositionLV != oldPositionLV) {
-            long newPositionLV = EncoderLinksVorne.read();
             oldPositionLV = newPositionLV;
             realPosLV = realPosLV + 1;
           }
           //Motor rechts vorne auslesen
+          newPositionRV = digitalRead(EncoderRV);
           if (newPositionRV != oldPositionRV) {
-            long newPositionRV = EncoderRechtsVorne.read();
             oldPositionRV = newPositionRV;
             realPosRV = realPosRV + 1;
           }
           //Motor rechts hinten auslesen
+          newPositionLH = digitalRead(EncoderRH);
           if (newPositionRH != oldPositionRH) {
-            long newPositionRH = EncoderRechtsHinten.read();
             oldPositionRH = newPositionRH;
             realPosRH = realPosRH + 1;
           }
@@ -313,7 +297,7 @@ void interrupt_detected() {
             realPosRH = target_posRH;
           }
           //Sind alle am Ziel?
-          if (realPosLH == target_posLH && realPosLV == target_posLV && realPosRV == target_posRV && realposRH == target_posRH) {
+          if (realPosLH == target_posLH && realPosLV == target_posLV && realPosRV == target_posRV && realPosRH == target_posRH) {
             break;
           }
         }
@@ -321,4 +305,40 @@ void interrupt_detected() {
       message = "";
     }
   }
+}
+
+void setup() {
+  
+  //Init all sensors
+  Serial.begin(9600);
+  Serial.println("Serial started");
+
+  pinMode(MLH, OUTPUT); //MotorLinksHinten    Signal Pin.
+  pinMode(MLV, OUTPUT); //MotorLinksVorne     Signal Pin.
+  pinMode(MRV, OUTPUT); //MotorRechtsVorne    Signal Pin.
+  pinMode(MRH, OUTPUT); //MotorRechtsHinten   Signal Pin.
+  
+  pinMode(button1, INPUT);
+  /*
+  Wire.begin();
+  Wire.beginTransmission(MPU_ADDR); // Begins a transmission to the I2C slave (GY-521 board)
+  Wire.write(0x6B); // PWR_MGMT_1 register
+  Wire.write(0); // set to zero (wakes up the MPU-6050)
+  Wire.endTransmission(true);
+
+  //Wait until start command from raspberry pi arrives (serial)
+  while (Serial.available() == 0) {
+    continue;
+
+  if (Serial.available()){
+      message = Serial.readStringUntil('#');
+      if (message == "start") {
+        break;
+      }
+    }
+  }*/
+  Serial.println("Done with setup");
+}
+
+void loop() { 
 }

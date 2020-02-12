@@ -6,7 +6,10 @@ const byte gray1 = A0;
 
 const byte button1 = 27;
 
-const int threshold_tile = 25;
+const int threshold_tile_left = 200;
+const int threshold_tile_right = 250;
+const int threshold_turn_left = 500;
+const int threshold_turn_right = 600;
 
 const int EncoderLH = 15;
 int realPosLH = 0;
@@ -34,13 +37,13 @@ int target_posRH;
 
 int MLH = 4;//MotorLinksHinten    Enable Pin
 int MLV = 8;//MotorLinksVorne     Enable Pin
-int MRV = 1;//MotorRechtsVorne    Enable Pin
-int MRH = 5;//MotorRechtsHinten   Enable Pin
+int MRV = 7;//MotorRechtsVorne    Enable Pin
+int MRH = 3;//MotorRechtsHinten   Enable Pin
 
 int ELH = 2;
 int ELV = 6;
-int ERV = 3;
-int ERH = 7;
+int ERV = 9;
+int ERH = 5;
 
 const int MINI_ADDR = 0x1F;
 const int MPU_ADDR = 0x68;// I2C address of the MPU-6050.
@@ -111,10 +114,9 @@ void read_touch() {
 
 void serialEvent() {
   //Listen on serial port for command
-  Serial.println("interrupt");
+  Serial.println("interrupt#");
   while(Serial.available()) {
     message = Serial.readStringUntil('#');
-    Serial.println(message);
     if (message == "pls") {
       //Daten formatieren
         read_data();
@@ -124,103 +126,92 @@ void serialEvent() {
     }
     else if (message == "straight") {
       //Fahren und encoder die ganze Zeit mit updaten
-        target_posLH = realPosLH + threshold_tile;
-        target_posLV = realPosLV + threshold_tile;
-        target_posRV = realPosRV + threshold_tile;
-        target_posRH = realPosRH + threshold_tile;
+        target_posLH = realPosLH + threshold_tile_left;
+        target_posLV = realPosLV + threshold_tile_left;
+        target_posRV = realPosRV + threshold_tile_right;
+        target_posRH = realPosRH + threshold_tile_right;
         digitalWrite(MLH,HIGH);
         digitalWrite(MLV,HIGH);
         digitalWrite(MRV,HIGH);
         digitalWrite(MRH,HIGH);
-        analogWrite(ELH, 230);   //PWM Speed Control
-        analogWrite(ELV, 230);   //PWM Speed Control
-        analogWrite(ERV, 185);   //PWM Speed Control
-        analogWrite(ERH, 185);   //PWM Speed Control
+        
+        digitalWrite(ELH,HIGH);
+        digitalWrite(ELV,HIGH);
+        digitalWrite(ERV,LOW);//Muss low weil die reversed sind
+        digitalWrite(ERH,LOW);//Muss low weil die reversed sind
         while(true) {
           //Motor links hinten auslesen
           newPositionLH = digitalRead(EncoderLH);
           if (newPositionLH != oldPositionLH) {
             oldPositionLH = newPositionLH;
             realPosLH = realPosLH + 1;
-            Serial.print("LH: ");
-            Serial.println(realPosLH);
           }
           //Motor links vorne auslesen
           newPositionLV = digitalRead(EncoderLV);
           if (newPositionLV != oldPositionLV) {
             oldPositionLV = newPositionLV;
             realPosLV = realPosLV + 1;
-            Serial.print("LV: ");
-            Serial.println(realPosLV);
           }
           //Motor rechts vorne auslesen
           newPositionRV = digitalRead(EncoderRV);
           if (newPositionRV != oldPositionRV) {
             oldPositionRV = newPositionRV;
             realPosRV = realPosRV + 1;
-            Serial.print("RV: ");
-            Serial.println(realPosRV);
           }
           //Motor rechts hinten auslesen
-          newPositionLH = digitalRead(EncoderRH);
+          newPositionRH = digitalRead(EncoderRH);
           if (newPositionRH != oldPositionRH) {
             oldPositionRH = newPositionRH;
             realPosRH = realPosRH + 1;
-            Serial.print("RH: ");
-            Serial.println(realPosRH);
           }
 
           //Ist Motor links hinten am Ziel?
           if (realPosLH >= target_posLH) {
             //Speed 0
             digitalWrite(MLH,LOW);
-            analogWrite(ELH, 0);
+            digitalWrite(ELH, LOW);
             realPosLH = target_posLH;
-            Serial.println("LINKS HINTEN IST DA!!!");
           }
           //Ist Motor links vorne am Ziel?
           if (realPosLV >= target_posLV) {
             //Speed 0
             digitalWrite(MLV,LOW);
-            analogWrite(ELV, 0);
+            digitalWrite(ELV, LOW);
             realPosLV = target_posLV;
-            Serial.println("LINKS VORNE IST DA!!!");
           }
           //Ist Motor rechts vorne am Ziel?
           if (realPosRV >= target_posRV) {
             //Speed 0
             digitalWrite(MRV,LOW);
-            analogWrite(ERV, 0);
+            digitalWrite(ERV, LOW);
             realPosRV = target_posRV;
-            Serial.println("RECHTS VORNE IST DA!!!");
           }
           //Ist Motor rechts hinten am Ziel?
           if (realPosRH >= target_posRH) {
             //Speed 0
             digitalWrite(MRH,LOW);
-            analogWrite(ERH, 0);
+            digitalWrite(ERH, LOW);
             realPosRH = target_posRH;
-            Serial.println("RECHTS HINTEN IST DA!!!");
           }
           //Sind alle am Ziel?
-          if (realPosLH == target_posLH || realPosLV == target_posLV || realPosRV == target_posRV || realPosRH == target_posRH) {
+          if (realPosLH == target_posLH && realPosLV == target_posLV && realPosRV == target_posRV && realPosRH == target_posRH) {
             digitalWrite(MRH,LOW);
-            analogWrite(ERH, 0);
-            realPosRH = target_posRH;
+            digitalWrite(ERH, LOW);
+            realPosRH = 0;
 
             digitalWrite(MRV,LOW);
-            analogWrite(ERV, 0);
-            realPosRV = target_posRV;
+            digitalWrite(ERV, LOW);
+            realPosRV = 0;
 
             digitalWrite(MLH,LOW);
-            analogWrite(ELH, 0);
-            realPosLH = target_posLH;
+            digitalWrite(ELH, LOW);
+            realPosLH = 0;
 
             digitalWrite(MLV,LOW);
-            analogWrite(ELV, 0);
-            realPosLV = target_posLV;
+            digitalWrite(ELV, LOW);
+            realPosLV = 0;
             
-            Serial.println("Alle da!");
+            Serial.println("Alle da!#");
             break;
           }
         }
@@ -229,19 +220,53 @@ void serialEvent() {
     }
     else if (message.substring(0, 4) == "turn") {
       int degrees = message.substring(4).toInt();
-      //Fahren und encoder die ganze Zeit mit updaten
-        target_posLH = realPosLH + threshold_tile;
-        target_posLV = realPosLV + threshold_tile;
-        target_posRV = realPosRV + threshold_tile;
-        target_posRH = realPosRH + threshold_tile;
+
+      if (degrees == 90) {
+        target_posLH = realPosLH + threshold_turn_left;
+        target_posLV = realPosLV + threshold_turn_left;
+        target_posRV = realPosRV + threshold_turn_right;
+        target_posRH = realPosRH + threshold_turn_right;
         digitalWrite(MLH,HIGH);
         digitalWrite(MLV,HIGH);
-        digitalWrite(MRV,LOW);
-        digitalWrite(MRH,LOW);
-        analogWrite(ELH, 120);   //PWM Speed Control
-        analogWrite(ELV, 120);   //PWM Speed Control
-        analogWrite(ERV, 120);   //PWM Speed Control
-        analogWrite(ERH, 120);   //PWM Speed Control
+        digitalWrite(MRV,HIGH);
+        digitalWrite(MRH,HIGH);
+
+        digitalWrite(ELH,HIGH);
+        digitalWrite(ELV,HIGH);
+        digitalWrite(ERV,HIGH);//High weil reversed
+        digitalWrite(ERH,HIGH);//High weil reversed
+      }
+      else if (degrees == 180) {
+        target_posLH = realPosLH + (2 * threshold_turn_left);
+        target_posLV = realPosLV + (2 * threshold_turn_left);
+        target_posRV = realPosRV + (2 * threshold_turn_right);
+        target_posRH = realPosRH + (2 * threshold_turn_right);
+
+        digitalWrite(MLH,HIGH);
+        digitalWrite(MLV,HIGH);
+        digitalWrite(MRV,HIGH);
+        digitalWrite(MRH,HIGH);
+        
+        digitalWrite(ELH,HIGH);
+        digitalWrite(ELV,HIGH);
+        digitalWrite(ERV,HIGH);//High weil reversed
+        digitalWrite(ERH,HIGH);//High weil reversed
+      }
+      else if (degrees == -90) {
+        target_posLH = realPosLH + threshold_turn_left;
+        target_posLV = realPosLV + threshold_turn_left;
+        target_posRV = realPosRV + threshold_turn_right;
+        target_posRH = realPosRH + threshold_turn_right;
+        digitalWrite(MLH,HIGH);
+        digitalWrite(MLV,HIGH);
+        digitalWrite(MRV,HIGH);
+        digitalWrite(MRH,HIGH);
+
+        digitalWrite(ELH,LOW);
+        digitalWrite(ELV,LOW);
+        digitalWrite(ERV,LOW);//Low weil reversed
+        digitalWrite(ERH,LOW);//Low weil reversed
+      }
         while(true) {
           //Motor links hinten auslesen
           newPositionLH = digitalRead(EncoderLH);
@@ -262,7 +287,7 @@ void serialEvent() {
             realPosRV = realPosRV + 1;
           }
           //Motor rechts hinten auslesen
-          newPositionLH = digitalRead(EncoderRH);
+          newPositionRH = digitalRead(EncoderRH);
           if (newPositionRH != oldPositionRH) {
             oldPositionRH = newPositionRH;
             realPosRH = realPosRH + 1;
@@ -272,32 +297,48 @@ void serialEvent() {
           if (realPosLH >= target_posLH) {
             //Speed 0
             digitalWrite(MLH,LOW);
-            analogWrite(ELH, 0);
+            digitalWrite(ELH,LOW);
             realPosLH = target_posLH;
           }
           //Ist Motor links vorne am Ziel?
           if (realPosLV >= target_posLV) {
             //Speed 0
             digitalWrite(MLV,LOW);
-            analogWrite(ELV, 0);
+            digitalWrite(ELV,LOW);
             realPosLV = target_posLV;
           }
           //Ist Motor rechts vorne am Ziel?
           if (realPosRV >= target_posRV) {
             //Speed 0
             digitalWrite(MRV,LOW);
-            analogWrite(ERV, 0);
+            digitalWrite(ERV,LOW);
             realPosRV = target_posRV;
           }
           //Ist Motor rechts vorne am Ziel?
           if (realPosRH >= target_posRH) {
             //Speed 0
             digitalWrite(MRH,LOW);
-            analogWrite(ERH, 0);
+            digitalWrite(ERH,LOW);
             realPosRH = target_posRH;
           }
           //Sind alle am Ziel?
           if (realPosLH == target_posLH && realPosLV == target_posLV && realPosRV == target_posRV && realPosRH == target_posRH) {
+            digitalWrite(MRH,LOW);
+            digitalWrite(ERH,LOW);
+            realPosRH = 0;
+
+            digitalWrite(MRV,LOW);
+            digitalWrite(ERV,LOW);
+            realPosRV = 0;
+
+            digitalWrite(MLH,LOW);
+            digitalWrite(ELH,LOW);
+            realPosLH = 0;
+
+            digitalWrite(MLV,LOW);
+            digitalWrite(ELV,LOW);
+            realPosLV = 0;
+            Serial.println("Alle sind da#");
             break;
           }
         }
@@ -311,7 +352,7 @@ void setup() {
   
   //Init all sensors
   Serial.begin(9600);
-  Serial.println("Serial started");
+  Serial.println("Serial started#");
 
   pinMode(MLH, OUTPUT); //MotorLinksHinten    Signal Pin.
   pinMode(MLV, OUTPUT); //MotorLinksVorne     Signal Pin.
@@ -337,7 +378,7 @@ void setup() {
       }
     }
   }*/
-  Serial.println("Done with setup");
+  Serial.println("Done with setup#");
 }
 
 void loop() { 

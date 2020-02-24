@@ -1,49 +1,45 @@
 #include "Wire.h"
+#include <Encoder.h>
+#include <Adafruit_MLX90614.h>
 
 String message;
 
 const byte gray1 = A0;
-
 const byte button1 = 27;
 
-const int threshold_tile_left = 200;
-const int threshold_tile_right = 250;
-const int threshold_turn_left = 500;
-const int threshold_turn_right = 600;
+int temp_vl;
+int temp_vr;
+int temp_hr;
+int temp_hl;
 
-const int EncoderLH = 15;
+Adafruit_MLX90614 mlx_1 = Adafruit_MLX90614(0x5E);
+Adafruit_MLX90614 mlx_2 = Adafruit_MLX90614(0x6F);
+Adafruit_MLX90614 mlx_3 = Adafruit_MLX90614(0x7A);
+Adafruit_MLX90614 mlx_4 = Adafruit_MLX90614(0x0B);
+
+int threshold_tile_plus = 1400;
+int threshold_tile_minus = -1 * threshold_tile_plus;
+const int threshold_turn_fw = 1300;
+const int threshold_turn_bw = -1 * threshold_turn_fw;
+
+int ERV = 10;
+int MRV = 11;
+Encoder EncoderLH(18,22);
+int ELV = 8;
+int MLV = 7;
+Encoder EncoderLV(19, 23);
+int ELH = 12;
+int MLH = 13;
+Encoder EncoderRV(2, 24);
+int ERH = 4;
+int MRH = 5;
+Encoder EncoderRH(3, 25);
+
 int realPosLH = 0;
-long oldPositionLH  = 0;
-long newPositionLH;
-int target_posLH;
-
-const int EncoderLV = 14;
 int realPosLV = 0;
-long oldPositionLV  = 0;
-long newPositionLV;
-int target_posLV;
-
-const int EncoderRV = 11;
 int realPosRV = 0;
-long oldPositionRV  = 0;
-long newPositionRV;
-int target_posRV;
-
-const int EncoderRH = 10;
 int realPosRH = 0;
-long oldPositionRH  = 0;
-long newPositionRH;
-int target_posRH;
 
-int MLH = 4;//MotorLinksHinten    Enable Pin
-int MLV = 8;//MotorLinksVorne     Enable Pin
-int MRV = 7;//MotorRechtsVorne    Enable Pin
-int MRH = 3;//MotorRechtsHinten   Enable Pin
-
-int ELH = 2;
-int ELV = 6;
-int ERV = 9;
-int ERH = 5;
 
 const int MINI_ADDR = 0x1F;
 const int MPU_ADDR = 0x68;// I2C address of the MPU-6050.
@@ -55,6 +51,7 @@ char* convert_int16_to_str(int16_t i) { // converts int16 to string. Moreover, r
   sprintf(tmp_str, "%6d", i);
   return tmp_str;
 }
+
 
 volatile int IRlinkshinten = 0;
 volatile int IRlinksvorne = 0;
@@ -100,8 +97,10 @@ void read_gyro() {
 }
 
 void read_temperature() {
-  //read temperature values
-  //return temperature values
+  temp_vl = mlx_1.readObjectTempC();
+  temp_vr = mlx_2.readObjectTempC();
+  temp_hr = mlx_3.readObjectTempC();
+  temp_hl = mlx_4.readObjectTempC();
 }
 
 void read_grayscale() {
@@ -112,255 +111,223 @@ void read_touch() {
   touch = digitalRead(button1);
 }
 
+void straight() {
+  EncoderLH.write(0);
+  EncoderLV.write(0);
+  EncoderRV.write(0);
+  EncoderRH.write(0);
+  delay(100);
+  digitalWrite(MLH,HIGH);
+  analogWrite(ELH,255);
+  digitalWrite(MLV,HIGH);
+  analogWrite(ELV,255);
+  digitalWrite(MRV,HIGH);
+  analogWrite(ERV,255);
+  digitalWrite(MRH,HIGH);
+  analogWrite(ERH,255);
+  
+  while (true) {
+    realPosLH = EncoderLH.read();
+    realPosLV = EncoderLV.read();
+    realPosRV = EncoderRV.read();
+    realPosRH = EncoderRH.read();
+
+    if (realPosLH >= threshold_tile_plus) {
+      digitalWrite(MLH, LOW);
+      analogWrite(ELH, 0);
+    }
+    if (realPosLV >= threshold_tile_plus) {
+      digitalWrite(MLV, LOW);
+      analogWrite(ELV, 0);
+    }
+    if (realPosRV <= threshold_tile_minus) {
+      digitalWrite(MRV, LOW);
+      analogWrite(ERV, 0);
+    }
+    if (realPosRH <= threshold_tile_minus) {
+      digitalWrite(MRH, LOW);
+      analogWrite(ERH, 0);
+    }
+    if (realPosLH >= threshold_tile_plus && realPosLV > threshold_tile_plus && realPosRV <= threshold_tile_minus && realPosRH <= threshold_tile_minus) {
+      break;
+    }
+  }
+}
+
+void reverse() {
+  EncoderLH.write(0);
+  EncoderLV.write(0);
+  EncoderRV.write(0);
+  EncoderRH.write(0);
+  delay(100);
+  digitalWrite(MLH,LOW);
+  analogWrite(ELH,255);
+  digitalWrite(MLV,LOW);
+  analogWrite(ELV,255);
+  digitalWrite(MRV,LOW);
+  analogWrite(ERV,255);
+  digitalWrite(MRH,LOW);
+  analogWrite(ERH,255);
+
+  while (true) {
+    realPosLH = EncoderLH.read();
+    realPosLV = EncoderLV.read();
+    realPosRV = EncoderRV.read();
+    realPosRH = EncoderRH.read();
+
+    if (realPosLH <= threshold_tile_minus) {
+      digitalWrite(MLH, LOW);
+      analogWrite(ELH, 0);
+    }
+    if (realPosLV <= threshold_tile_minus) {
+      digitalWrite(MLV, LOW);
+      analogWrite(ELV, 0);
+    }
+    if (realPosRV >= threshold_tile_plus) {
+      digitalWrite(MRV, LOW);
+      analogWrite(ERV, 0);
+    }
+    if (realPosRH >= threshold_tile_plus) {
+      digitalWrite(MRH, LOW);
+      analogWrite(ERH, 0);
+    }
+    if (realPosLH <= threshold_tile_minus and realPosLV <= threshold_tile_minus and realPosRV >= threshold_tile_plus and realPosRH >= threshold_tile_plus) {
+      break;
+    }
+  }
+}
+
+void right() {
+  EncoderLH.write(0);
+  EncoderLV.write(0);
+  EncoderRV.write(0);
+  EncoderRH.write(0);
+  delay(100);
+  digitalWrite(MLH,HIGH);
+  analogWrite(ELH,255);
+  digitalWrite(MLV,HIGH);
+  analogWrite(ELV,255);
+  digitalWrite(MRV,LOW);
+  analogWrite(ERV,255);
+  digitalWrite(MRH,LOW);
+  analogWrite(ERH,255);
+
+  while (true) {
+    realPosLH = EncoderLH.read();
+    realPosLV = EncoderLV.read();
+    realPosRV = EncoderRV.read();
+    realPosRH = EncoderRH.read();
+
+    if (realPosLH >= threshold_turn_fw) {
+      digitalWrite(MLH, LOW);
+      analogWrite(ELH, 0);
+    }
+    if (realPosLV >= threshold_turn_fw) {
+      digitalWrite(MLV, LOW);
+      analogWrite(ELV, 0);
+    }
+    if (realPosRV >= threshold_turn_fw) {
+      digitalWrite(MRV, LOW);
+      analogWrite(ERV, 0);
+    }
+    if (realPosRH >= threshold_turn_fw) {
+      digitalWrite(MRH, LOW);
+      analogWrite(ERH, 0);
+    }
+    if (realPosLH >= threshold_turn_fw and realPosLV >= threshold_turn_fw and realPosRV >= threshold_turn_fw and realPosRH >= threshold_turn_fw) {
+      break;
+    }
+  }
+}
+
+void left() {
+  EncoderLH.write(0);
+  EncoderLV.write(0);
+  EncoderRV.write(0);
+  EncoderRH.write(0);
+  delay(100);
+  digitalWrite(MLH,LOW);
+  analogWrite(ELH,255);
+  digitalWrite(MLV,LOW);
+  analogWrite(ELV,255);
+  digitalWrite(MRV,HIGH);
+  analogWrite(ERV,255);
+  digitalWrite(MRH,HIGH);
+  analogWrite(ERH,255);
+
+  while (true) {
+    realPosLH = EncoderLH.read();
+    realPosLV = EncoderLV.read();
+    realPosRV = EncoderRV.read();
+    realPosRH = EncoderRH.read();
+
+    if (realPosLH <= threshold_turn_bw) {
+      digitalWrite(MLH, LOW);
+      analogWrite(ELH, 0);
+    }
+    if (realPosLV <= threshold_turn_bw) {
+      digitalWrite(MLV, LOW);
+      analogWrite(ELV, 0);
+    }
+    if (realPosRV <= threshold_turn_bw) {
+      digitalWrite(MRV, LOW);
+      analogWrite(ERV, 0);
+    }
+    if (realPosRH <= threshold_turn_bw) {
+      digitalWrite(MRH, LOW);
+      analogWrite(ERH, 0);
+    }
+    if (realPosLH <= threshold_turn_bw and realPosLV <= threshold_turn_bw and realPosRV <= threshold_turn_bw and realPosRH <= threshold_turn_bw) {
+      break;
+    }
+  }
+}
+
 void serialEvent() {
-  //Listen on serial port for command
-  Serial.println("interrupt#");
   while(Serial.available()) {
     message = Serial.readStringUntil('#');
     if (message == "pls") {
       //Daten formatieren
         read_data();
         delay(10);
+      Serial.println("Eine wunderbare Nachricht!");
       Serial.println(String("[ " + String(IRlinkshinten) + ", " + String(IRlinksvorne) + ", " + String(IRvorne) + ", " + String(IRrechtsvorne) + ", " + String(IRrechtshinten) + ", "+gyro_x+", "+gyro_y+", "+gyro_z+", "+grayscale+", "+touch+" ]"));
       message = "";
     }
     else if (message == "straight") {
-      //Fahren und encoder die ganze Zeit mit updaten
-        target_posLH = realPosLH + threshold_tile_left;
-        target_posLV = realPosLV + threshold_tile_left;
-        target_posRV = realPosRV + threshold_tile_right;
-        target_posRH = realPosRH + threshold_tile_right;
-        digitalWrite(MLH,HIGH);
-        digitalWrite(MLV,HIGH);
-        digitalWrite(MRV,HIGH);
-        digitalWrite(MRH,HIGH);
-        
-        digitalWrite(ELH,HIGH);
-        digitalWrite(ELV,HIGH);
-        digitalWrite(ERV,LOW);//Muss low weil die reversed sind
-        digitalWrite(ERH,LOW);//Muss low weil die reversed sind
-        while(true) {
-          //Motor links hinten auslesen
-          newPositionLH = digitalRead(EncoderLH);
-          if (newPositionLH != oldPositionLH) {
-            oldPositionLH = newPositionLH;
-            realPosLH = realPosLH + 1;
-          }
-          //Motor links vorne auslesen
-          newPositionLV = digitalRead(EncoderLV);
-          if (newPositionLV != oldPositionLV) {
-            oldPositionLV = newPositionLV;
-            realPosLV = realPosLV + 1;
-          }
-          //Motor rechts vorne auslesen
-          newPositionRV = digitalRead(EncoderRV);
-          if (newPositionRV != oldPositionRV) {
-            oldPositionRV = newPositionRV;
-            realPosRV = realPosRV + 1;
-          }
-          //Motor rechts hinten auslesen
-          newPositionRH = digitalRead(EncoderRH);
-          if (newPositionRH != oldPositionRH) {
-            oldPositionRH = newPositionRH;
-            realPosRH = realPosRH + 1;
-          }
-
-          //Ist Motor links hinten am Ziel?
-          if (realPosLH >= target_posLH) {
-            //Speed 0
-            digitalWrite(MLH,LOW);
-            digitalWrite(ELH, LOW);
-            realPosLH = target_posLH;
-          }
-          //Ist Motor links vorne am Ziel?
-          if (realPosLV >= target_posLV) {
-            //Speed 0
-            digitalWrite(MLV,LOW);
-            digitalWrite(ELV, LOW);
-            realPosLV = target_posLV;
-          }
-          //Ist Motor rechts vorne am Ziel?
-          if (realPosRV >= target_posRV) {
-            //Speed 0
-            digitalWrite(MRV,LOW);
-            digitalWrite(ERV, LOW);
-            realPosRV = target_posRV;
-          }
-          //Ist Motor rechts hinten am Ziel?
-          if (realPosRH >= target_posRH) {
-            //Speed 0
-            digitalWrite(MRH,LOW);
-            digitalWrite(ERH, LOW);
-            realPosRH = target_posRH;
-          }
-          //Sind alle am Ziel?
-          if (realPosLH == target_posLH && realPosLV == target_posLV && realPosRV == target_posRV && realPosRH == target_posRH) {
-            digitalWrite(MRH,LOW);
-            digitalWrite(ERH, LOW);
-            realPosRH = 0;
-
-            digitalWrite(MRV,LOW);
-            digitalWrite(ERV, LOW);
-            realPosRV = 0;
-
-            digitalWrite(MLH,LOW);
-            digitalWrite(ELH, LOW);
-            realPosLH = 0;
-
-            digitalWrite(MLV,LOW);
-            digitalWrite(ELV, LOW);
-            realPosLV = 0;
-            
-            Serial.println("Alle da!#");
-            break;
-          }
-        }
-      Serial.write("angekommen#");
-      message = "";
+      straight();
     }
-    else if (message.substring(0, 4) == "turn") {
-      int degrees = message.substring(4).toInt();
-
-      if (degrees == 90) {
-        target_posLH = realPosLH + threshold_turn_left;
-        target_posLV = realPosLV + threshold_turn_left;
-        target_posRV = realPosRV + threshold_turn_right;
-        target_posRH = realPosRH + threshold_turn_right;
-        digitalWrite(MLH,HIGH);
-        digitalWrite(MLV,HIGH);
-        digitalWrite(MRV,HIGH);
-        digitalWrite(MRH,HIGH);
-
-        digitalWrite(ELH,HIGH);
-        digitalWrite(ELV,HIGH);
-        digitalWrite(ERV,HIGH);//High weil reversed
-        digitalWrite(ERH,HIGH);//High weil reversed
-      }
-      else if (degrees == 180) {
-        target_posLH = realPosLH + (2 * threshold_turn_left);
-        target_posLV = realPosLV + (2 * threshold_turn_left);
-        target_posRV = realPosRV + (2 * threshold_turn_right);
-        target_posRH = realPosRH + (2 * threshold_turn_right);
-
-        digitalWrite(MLH,HIGH);
-        digitalWrite(MLV,HIGH);
-        digitalWrite(MRV,HIGH);
-        digitalWrite(MRH,HIGH);
-        
-        digitalWrite(ELH,HIGH);
-        digitalWrite(ELV,HIGH);
-        digitalWrite(ERV,HIGH);//High weil reversed
-        digitalWrite(ERH,HIGH);//High weil reversed
-      }
-      else if (degrees == -90) {
-        target_posLH = realPosLH + threshold_turn_left;
-        target_posLV = realPosLV + threshold_turn_left;
-        target_posRV = realPosRV + threshold_turn_right;
-        target_posRH = realPosRH + threshold_turn_right;
-        digitalWrite(MLH,HIGH);
-        digitalWrite(MLV,HIGH);
-        digitalWrite(MRV,HIGH);
-        digitalWrite(MRH,HIGH);
-
-        digitalWrite(ELH,LOW);
-        digitalWrite(ELV,LOW);
-        digitalWrite(ERV,LOW);//Low weil reversed
-        digitalWrite(ERH,LOW);//Low weil reversed
-      }
-        while(true) {
-          //Motor links hinten auslesen
-          newPositionLH = digitalRead(EncoderLH);
-          if (newPositionLH != oldPositionLH) {
-            oldPositionLH = newPositionLH;
-            realPosLH = realPosLH + 1;
-          }
-          //Motor links vorne auslesen
-          newPositionLV = digitalRead(EncoderLV);
-          if (newPositionLV != oldPositionLV) {
-            oldPositionLV = newPositionLV;
-            realPosLV = realPosLV + 1;
-          }
-          //Motor rechts vorne auslesen
-          newPositionRV = digitalRead(EncoderRV);
-          if (newPositionRV != oldPositionRV) {
-            oldPositionRV = newPositionRV;
-            realPosRV = realPosRV + 1;
-          }
-          //Motor rechts hinten auslesen
-          newPositionRH = digitalRead(EncoderRH);
-          if (newPositionRH != oldPositionRH) {
-            oldPositionRH = newPositionRH;
-            realPosRH = realPosRH + 1;
-          }
-
-          //Ist Motor links hinten am Ziel?
-          if (realPosLH >= target_posLH) {
-            //Speed 0
-            digitalWrite(MLH,LOW);
-            digitalWrite(ELH,LOW);
-            realPosLH = target_posLH;
-          }
-          //Ist Motor links vorne am Ziel?
-          if (realPosLV >= target_posLV) {
-            //Speed 0
-            digitalWrite(MLV,LOW);
-            digitalWrite(ELV,LOW);
-            realPosLV = target_posLV;
-          }
-          //Ist Motor rechts vorne am Ziel?
-          if (realPosRV >= target_posRV) {
-            //Speed 0
-            digitalWrite(MRV,LOW);
-            digitalWrite(ERV,LOW);
-            realPosRV = target_posRV;
-          }
-          //Ist Motor rechts vorne am Ziel?
-          if (realPosRH >= target_posRH) {
-            //Speed 0
-            digitalWrite(MRH,LOW);
-            digitalWrite(ERH,LOW);
-            realPosRH = target_posRH;
-          }
-          //Sind alle am Ziel?
-          if (realPosLH == target_posLH && realPosLV == target_posLV && realPosRV == target_posRV && realPosRH == target_posRH) {
-            digitalWrite(MRH,LOW);
-            digitalWrite(ERH,LOW);
-            realPosRH = 0;
-
-            digitalWrite(MRV,LOW);
-            digitalWrite(ERV,LOW);
-            realPosRV = 0;
-
-            digitalWrite(MLH,LOW);
-            digitalWrite(ELH,LOW);
-            realPosLH = 0;
-
-            digitalWrite(MLV,LOW);
-            digitalWrite(ELV,LOW);
-            realPosLV = 0;
-            Serial.println("Alle sind da#");
-            break;
-          }
-        }
-      Serial.write("angekommen#");
-      message = "";
+    else if (message == "reverse") {
+      reverse();
+    }
+    else if (message == "right") {
+      right();
+    }
+    else if (message == "left") {
+      left();
     }
   }
 }
 
 void setup() {
-  
-  //Init all sensors
   Serial.begin(9600);
-  Serial.println("Serial started#");
 
-  pinMode(MLH, OUTPUT); //MotorLinksHinten    Signal Pin.
-  pinMode(MLV, OUTPUT); //MotorLinksVorne     Signal Pin.
-  pinMode(MRV, OUTPUT); //MotorRechtsVorne    Signal Pin.
-  pinMode(MRH, OUTPUT); //MotorRechtsHinten   Signal Pin.
+  mlx_1.begin();
+  mlx_2.begin(); 
+  mlx_3.begin();
+  mlx_4.begin();
+
+  pinMode(MLH,OUTPUT);
+  pinMode(ELH,OUTPUT);
+  pinMode(MLV,OUTPUT);
+  pinMode(ELV,OUTPUT);
+  pinMode(MRV,OUTPUT);
+  pinMode(ERV,OUTPUT);
+  pinMode(MRH,OUTPUT);
+  pinMode(ERH,OUTPUT);
   
   pinMode(button1, INPUT);
-  /*
+  
   Wire.begin();
   Wire.beginTransmission(MPU_ADDR); // Begins a transmission to the I2C slave (GY-521 board)
   Wire.write(0x6B); // PWR_MGMT_1 register
@@ -377,8 +344,7 @@ void setup() {
         break;
       }
     }
-  }*/
-  Serial.println("Done with setup#");
+  }
 }
 
 void loop() { 

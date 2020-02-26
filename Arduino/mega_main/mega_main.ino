@@ -51,6 +51,7 @@ char* convert_int16_to_str(int16_t i) { // converts int16 to string. Moreover, r
   sprintf(tmp_str, "%6d", i);
   return tmp_str;
 }
+boolean ramp = false;
 
 
 volatile int IRlinkshinten = 0;
@@ -87,13 +88,21 @@ void read_gyro() {
   Wire.endTransmission(false); // the parameter indicates that the Arduino will send a restart. As a result, the connection is kept active.
   Wire.requestFrom(MPU_ADDR, 7*2, true); // request a total of 7*2=14 registers
 
-  accelerometer_x = Wire.read()<<8 | Wire.read(); // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
-  accelerometer_y = Wire.read()<<8 | Wire.read(); // reading registers: 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
-  accelerometer_z = Wire.read()<<8 | Wire.read(); // reading registers: 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
-  temperature = Wire.read()<<8 | Wire.read(); // reading registers: 0x41 (TEMP_OUT_H) and 0x42 (TEMP_OUT_L)
-  gyro_x = Wire.read()<<8 | Wire.read(); // reading registers: 0x43 (GYRO_XOUT_H) and 0x44 (GYRO_XOUT_L)
-  gyro_y = Wire.read()<<8 | Wire.read(); // reading registers: 0x45 (GYRO_YOUT_H) and 0x46 (GYRO_YOUT_L)
-  gyro_z = Wire.read()<<8 | Wire.read(); // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
+  gvX = Wire.read()<<8 | Wire.read();
+  gvY = Wire.read()<<8 | Wire.read();
+ 
+  accCorr = gvX - ACCEL_OFFSET;
+  accCorr = map(accCorr, -16800, 16800, -90, 90);
+  gaX = constrain(accCorr, -90, 90);
+  accCorr = gvY - ACCEL_OFFSET;
+  accCorr = map(accCorr, -16800, 16800, -90, 90);
+  gaY = constrain(accCorr, -90, 90);
+  
+  if(gaX >= 20 || gaY >= 20){
+    ramp == true;
+  }else{
+    ramp == false;
+  }
 }
 
 void read_temperature() {
@@ -291,7 +300,7 @@ void serialEvent() {
         read_data();
         delay(10);
       Serial.println("Eine wunderbare Nachricht!");
-      Serial.println(String("[ " + String(IRlinkshinten) + ", " + String(IRlinksvorne) + ", " + String(IRvorne) + ", " + String(IRrechtsvorne) + ", " + String(IRrechtshinten) + ", "+gyro_x+", "+gyro_y+", "+gyro_z+", "+grayscale+", "+touch+" ]"));
+      Serial.println(String("[ " + String(IRlinkshinten) + ", " + String(IRlinksvorne) + ", " + String(IRvorne) + ", " + String(IRrechtsvorne) + ", " + String(IRrechtshinten) + ", "+gyro_x+", "+gyro_y+", "+gyro_z+", "+grayscale+", "+touch+", "+String(ramp)+" ]"));
       message = "";
     }
     else if (message == "straight") {

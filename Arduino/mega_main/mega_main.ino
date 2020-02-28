@@ -41,13 +41,10 @@ int realPosRV = 0;
 int realPosRH = 0;
 
 int gvX, gvY, gvZ, gaZ = 0;
+const int ACCEL_OFFSET = 200;
 
 const int MPU_ADDR = 0x68;// I2C address of the MPU-6050.
 
-char* convert_int16_to_str(int16_t i) { // converts int16 to string. Moreover, resulting strings will have the same length in the debug monitor.
-  sprintf(tmp_str, "%6d", i);
-  return tmp_str;
-}
 boolean ramp = false;
 
 
@@ -92,9 +89,9 @@ void read_gyro() {
   gvY = Wire.read()<<8 | Wire.read();
   gvZ = Wire.read()<<8 | Wire.read();
  
-  accCorr = gvZ - ACCEL_OFFSET;
-  accCorr = map(accCorr, -16800, 16800, -90, 90);
-  gaZ = constrain(accCorr, -90, 90);
+  gvZ = gvZ - ACCEL_OFFSET;
+  gvZ = map(gvZ, -16800, 16800, -90, 90);
+  gaZ = constrain(gvZ, -90, 90);
   
   if(gaZ <= 65){
     ramp == true;

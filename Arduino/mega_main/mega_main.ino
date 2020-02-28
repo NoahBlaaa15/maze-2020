@@ -40,7 +40,7 @@ int realPosLV = 0;
 int realPosRV = 0;
 int realPosRH = 0;
 
-int gvX, gvY, gvZ, gaZ = 0;
+int gvX, gvY, gvZ, gaX = 0;
 const int ACCEL_OFFSET = 200;
 
 const int MPU_ADDR = 0x68;// I2C address of the MPU-6050.
@@ -89,11 +89,11 @@ void read_gyro() {
   gvY = Wire.read()<<8 | Wire.read();
   gvZ = Wire.read()<<8 | Wire.read();
  
-  gvZ = gvZ - ACCEL_OFFSET;
-  gvZ = map(gvZ, -16800, 16800, -90, 90);
-  gaZ = constrain(gvZ, -90, 90);
+  gvX = gvX - ACCEL_OFFSET;
+  gvX = map(gvX, -16800, 16800, -90, 90);
+  gaX = constrain(gvX, -90, 90);
   
-  if(gaZ <= 65){
+  if(gaX <= 25){
     ramp == true;
   }else{
     ramp == false;
@@ -331,7 +331,7 @@ void serialEvent() {
       + ", " + String(IRlinksvorne) + ", " + String(IRvorne) + ", " + String(IRrechtsvorne) 
       + ", " + String(IRrechtshinten) + ", " + String(grayscale) + ", " + String(touch)
       + ", " + String(temp_vl) + ", " + String(temp_vr) + ", " + String(temp_hl) 
-      + ", " + String(temp_hr) + ", " + String(gaZ) + " ]#"));
+      + ", " + String(temp_hr) + ", " + String(gaX) + " ]#"));
       message = "";
     }
     else if (message == "straight") {

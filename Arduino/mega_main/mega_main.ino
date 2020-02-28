@@ -40,13 +40,10 @@ int realPosLV = 0;
 int realPosRV = 0;
 int realPosRH = 0;
 
+int gvX, gvY, gvZ, gaZ = 0;
 
-const int MINI_ADDR = 0x1F;
 const int MPU_ADDR = 0x68;// I2C address of the MPU-6050.
-int16_t accelerometer_x, accelerometer_y, accelerometer_z; // variables for accelerometer raw data
-int16_t gyro_x, gyro_y, gyro_z; // variables for gyro raw data
-int16_t temperature; // variables for temperature data
-char tmp_str[7]; // temporary variable used in convert function
+
 char* convert_int16_to_str(int16_t i) { // converts int16 to string. Moreover, resulting strings will have the same length in the debug monitor.
   sprintf(tmp_str, "%6d", i);
   return tmp_str;
@@ -93,15 +90,13 @@ void read_gyro() {
 
   gvX = Wire.read()<<8 | Wire.read();
   gvY = Wire.read()<<8 | Wire.read();
+  gvZ = Wire.read()<<8 | Wire.read();
  
-  accCorr = gvX - ACCEL_OFFSET;
+  accCorr = gvZ - ACCEL_OFFSET;
   accCorr = map(accCorr, -16800, 16800, -90, 90);
-  gaX = constrain(accCorr, -90, 90);
-  accCorr = gvY - ACCEL_OFFSET;
-  accCorr = map(accCorr, -16800, 16800, -90, 90);
-  gaY = constrain(accCorr, -90, 90);
+  gaZ = constrain(accCorr, -90, 90);
   
-  if(gaX >= 32 || gaY >= 32){
+  if(gaZ <= 65){
     ramp == true;
   }else{
     ramp == false;
@@ -313,12 +308,12 @@ void setup() {
   pinMode(ERH,OUTPUT);
   
   pinMode(button1, INPUT);
-  /*
+  
   Wire.begin();
-  Wire.beginTransmission(MPU_ADDR); // Begins a transmission to the I2C slave (GY-521 board)
-  Wire.write(0x6B); // PWR_MGMT_1 register
-  Wire.write(0); // set to zero (wakes up the MPU-6050)
-  Wire.endTransmission(true);*/
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x6B);
+  Wire.write(0);
+  Wire.endTransmission();
 
 }
 
@@ -337,10 +332,9 @@ void serialEvent() {
         delay(10);
       Serial.println(String("[ " + String(IRlinkshinten)
       + ", " + String(IRlinksvorne) + ", " + String(IRvorne) + ", " + String(IRrechtsvorne) 
-      + ", " + String(IRrechtshinten) + ", " + String(gyro_x) + ", " + String(gyro_y)
-      + ", " + String(gyro_z) + ", " + String(grayscale) + ", " + String(touch)
+      + ", " + String(IRrechtshinten) + ", " + String(grayscale) + ", " + String(touch)
       + ", " + String(temp_vl) + ", " + String(temp_vr) + ", " + String(temp_hl) 
-      + ", " + String(temp_hr) +" ]#"));
+      + ", " + String(temp_hr) + ", " + String(gaZ) + " ]#"));
       message = "";
     }
     else if (message == "straight") {

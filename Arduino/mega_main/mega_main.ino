@@ -98,7 +98,7 @@ void read_gyro() {
   accCorr = map(accCorr, -16800, 16800, -90, 90);
   gaY = constrain(accCorr, -90, 90);
   
-  if(gaX >= 20 || gaY >= 20){
+  if(gaX >= 32 || gaY >= 32){
     ramp == true;
   }else{
     ramp == false;

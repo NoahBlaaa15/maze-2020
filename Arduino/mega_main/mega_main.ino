@@ -4,7 +4,7 @@
 
 String message;
 
-const byte gray1 = A0;
+const byte gray1 = A10;
 const byte button1 = 27;
 
 int temp_vl;
@@ -54,11 +54,11 @@ char* convert_int16_to_str(int16_t i) { // converts int16 to string. Moreover, r
 boolean ramp = false;
 
 
-volatile int IRlinkshinten = 0;
-volatile int IRlinksvorne = 0;
-volatile int IRvorne = 0;
-volatile int IRrechtsvorne = 0;
-volatile int IRrechtshinten = 0;
+volatile float IRlinkshinten = 0;
+volatile float IRlinksvorne = 0;
+volatile float IRvorne = 0;
+volatile float IRrechtsvorne = 0;
+volatile float IRrechtshinten = 0;
 
 int grayscale = 0;
 
@@ -72,14 +72,17 @@ void read_data() {
   read_touch();
 }
 
-void read_ir() {
-  Wire.requestFrom(MINI_ADDR, 5, true);
-  IRlinkshinten = Wire.read();
-  IRlinksvorne = Wire.read();
-  IRvorne = Wire.read();
-  IRrechtsvorne = Wire.read();
-  IRrechtshinten = Wire.read();
-  Wire.endTransmission();
+void read_ir() {  
+  IRlinkshinten = analogRead(A4)*0.0048828125;
+  IRlinkshinten = 13*pow(IRlinkshinten, -1);
+  IRlinksvorne = analogRead(A5)*0.0048828125;
+  IRlinksvorne = 13*pow(IRlinksvorne, -1);
+  IRvorne = analogRead(A0)*0.0048828125;
+  IRvorne = 13*pow(IRvorne, -1);
+  IRrechtsvorne = analogRead(A1)*0.0048828125;
+  IRrechtsvorne = 13*pow(IRrechtsvorne, -1);
+  IRrechtshinten = analogRead(A2)*0.0048828125;
+  IRrechtshinten = 13*pow(IRrechtshinten, -1);
 }
 
 void read_gyro() {
@@ -292,32 +295,6 @@ void left() {
   }
 }
 
-void serialEvent() {
-  while(Serial.available()) {
-    message = Serial.readStringUntil('#');
-    if (message == "pls") {
-      //Daten formatieren
-        read_data();
-        delay(10);
-      Serial.println("Eine wunderbare Nachricht!");
-      Serial.println(String("[ " + String(IRlinkshinten) + ", " + String(IRlinksvorne) + ", " + String(IRvorne) + ", " + String(IRrechtsvorne) + ", " + String(IRrechtshinten) + ", "+gyro_x+", "+gyro_y+", "+gyro_z+", "+grayscale+", "+touch+", "+String(ramp)+" ]"));
-      message = "";
-    }
-    else if (message == "straight") {
-      straight();
-    }
-    else if (message == "reverse") {
-      reverse();
-    }
-    else if (message == "right") {
-      right();
-    }
-    else if (message == "left") {
-      left();
-    }
-  }
-}
-
 void setup() {
   Serial.begin(9600);
 
@@ -336,25 +313,47 @@ void setup() {
   pinMode(ERH,OUTPUT);
   
   pinMode(button1, INPUT);
-  
+  /*
   Wire.begin();
   Wire.beginTransmission(MPU_ADDR); // Begins a transmission to the I2C slave (GY-521 board)
   Wire.write(0x6B); // PWR_MGMT_1 register
   Wire.write(0); // set to zero (wakes up the MPU-6050)
-  Wire.endTransmission(true);
+  Wire.endTransmission(true);*/
 
-  //Wait until start command from raspberry pi arrives (serial)
-  while (Serial.available() == 0) {
-    continue;
-
-  if (Serial.available()){
-      message = Serial.readStringUntil('#');
-      if (message == "start") {
-        break;
-      }
-    }
-  }
 }
 
-void loop() { 
+void loop() {
+  delay(25);
+}
+
+void serialEvent() {
+  while(Serial.available()) {
+    message = Serial.readStringUntil('#');
+    if (message == "pls") {
+      pinMode(LED_BUILTIN, OUTPUT);
+      digitalWrite(LED_BUILTIN, HIGH);
+      //Daten formatieren
+        read_data();
+        delay(10);
+      Serial.println(String("[ " + String(IRlinkshinten)
+      + ", " + String(IRlinksvorne) + ", " + String(IRvorne) + ", " + String(IRrechtsvorne) 
+      + ", " + String(IRrechtshinten) + ", " + String(gyro_x) + ", " + String(gyro_y)
+      + ", " + String(gyro_z) + ", " + String(grayscale) + ", " + String(touch)
+      + ", " + String(temp_vl) + ", " + String(temp_vr) + ", " + String(temp_hl) 
+      + ", " + String(temp_hr) +" ]#"));
+      message = "";
+    }
+    else if (message == "straight") {
+      straight();
+    }
+    else if (message == "reverse") {
+      reverse();
+    }
+    else if (message == "right") {
+      right();
+    }
+    else if (message == "left") {
+      left();
+    }
+  }
 }

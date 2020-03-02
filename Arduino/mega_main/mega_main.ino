@@ -12,6 +12,9 @@ int temp_vr;
 int temp_hr;
 int temp_hl;
 
+int turn_time = 600;
+int straight_time = 300;
+
 Adafruit_MLX90614 mlx_1 = Adafruit_MLX90614(0x5E);
 Adafruit_MLX90614 mlx_2 = Adafruit_MLX90614(0x6F);
 Adafruit_MLX90614 mlx_3 = Adafruit_MLX90614(0x7A);
@@ -130,7 +133,7 @@ void straight() {
   digitalWrite(MRH,HIGH);
   analogWrite(ERH,255);
   
-  while (true) {
+  /*while (true) {
     realPosLH = EncoderLH.read();
     realPosLV = EncoderLV.read();
     realPosRV = EncoderRV.read();
@@ -155,7 +158,18 @@ void straight() {
     if (realPosLH >= threshold_tile_plus && realPosLV > threshold_tile_plus && realPosRV <= threshold_tile_minus && realPosRH <= threshold_tile_minus) {
       break;
     }
-  }
+  }*/
+
+  delay(straight_time);
+      digitalWrite(MLH, LOW);
+      analogWrite(ELH, 0);
+      digitalWrite(MLV, LOW);
+      analogWrite(ELV, 0);
+      digitalWrite(MRV, LOW);
+      analogWrite(ERV, 0);
+      digitalWrite(MRH, LOW);
+      analogWrite(ERH, 0);
+      Serial.println("done#");
 }
 
 void reverse() {
@@ -173,6 +187,17 @@ void reverse() {
   digitalWrite(MRH,LOW);
   analogWrite(ERH,255);
 
+  delay(straight_time);
+  digitalWrite(MLH, LOW);
+  analogWrite(ELH, 0);
+  digitalWrite(MLV, LOW);
+  analogWrite(ELV, 0);
+  digitalWrite(MRV, LOW);
+  analogWrite(ERV, 0);
+  digitalWrite(MRH, LOW);
+  analogWrite(ERH, 0);
+  Serial.println("done#");
+/*
   while (true) {
     realPosLH = EncoderLH.read();
     realPosLV = EncoderLV.read();
@@ -198,7 +223,7 @@ void reverse() {
     if (realPosLH <= threshold_tile_minus and realPosLV <= threshold_tile_minus and realPosRV >= threshold_tile_plus and realPosRH >= threshold_tile_plus) {
       break;
     }
-  }
+  }*/
 }
 
 void right() {
@@ -216,7 +241,7 @@ void right() {
   digitalWrite(MRH,LOW);
   analogWrite(ERH,255);
 
-  while (true) {
+  /*while (true) {
     realPosLH = EncoderLH.read();
     realPosLV = EncoderLV.read();
     realPosRV = EncoderRV.read();
@@ -241,7 +266,17 @@ void right() {
     if (realPosLH >= threshold_turn_fw and realPosLV >= threshold_turn_fw and realPosRV >= threshold_turn_fw and realPosRH >= threshold_turn_fw) {
       break;
     }
-  }
+  }*/
+  delay(turn_time);
+  digitalWrite(MLH, LOW);
+  analogWrite(ELH, 0);
+  digitalWrite(MLV, LOW);
+  analogWrite(ELV, 0);
+  digitalWrite(MRV, LOW);
+  analogWrite(ERV, 0);
+  digitalWrite(MRH, LOW);
+  analogWrite(ERH, 0);
+  Serial.println("done#");
 }
 
 void left() {
@@ -259,7 +294,8 @@ void left() {
   digitalWrite(MRH,HIGH);
   analogWrite(ERH,255);
 
-  while (true) {
+  /*while (true) {
+   * s
     realPosLH = EncoderLH.read();
     realPosLV = EncoderLV.read();
     realPosRV = EncoderRV.read();
@@ -284,7 +320,18 @@ void left() {
     if (realPosLH <= threshold_turn_bw and realPosLV <= threshold_turn_bw and realPosRV <= threshold_turn_bw and realPosRH <= threshold_turn_bw) {
       break;
     }
-  }
+  }*/
+
+  delay(turn_time-150);
+  digitalWrite(MLH, LOW);
+  analogWrite(ELH, 0);
+  digitalWrite(MLV, LOW);
+  analogWrite(ELV, 0);
+  digitalWrite(MRV, LOW);
+  analogWrite(ERV, 0);
+  digitalWrite(MRH, LOW);
+  analogWrite(ERH, 0);
+  Serial.println("done#");
 }
 
 void setup() {

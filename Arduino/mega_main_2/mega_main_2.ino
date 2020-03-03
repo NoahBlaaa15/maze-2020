@@ -76,7 +76,7 @@ void read_ir() {
   IRlinksvorne = 13*pow(IRlinksvorne, -1);
   IRvorne = analogRead(A0)*0.0048828125;
   IRvorne = 13*pow(IRvorne, -1);
-  IRrechtsvorne = analogRead(A1)*0.0048828125;
+  IRrechtsvorne = analogRead(A2)*0.0048828125; //Von A1 zu A2 da IR an A1 kaputt
   IRrechtsvorne = 13*pow(IRrechtsvorne, -1);
   IRrechtshinten = analogRead(A2)*0.0048828125;
   IRrechtshinten = 13*pow(IRrechtshinten, -1);
@@ -155,6 +155,7 @@ void straight() {
     
     }
     if (realPosRV >= threshold_tile_plus && realPosLV-250 <= threshold_tile_minus) {
+      Serial.println("done#");
       break;
     }
   }
@@ -219,6 +220,7 @@ void ausrichten(){
     
     }
     if (realPosRV <= threshold_wall_minus && realPosLV+250 >= threshold_wall_plus) {
+      Serial.println("done#");
       break;
     }
   }
@@ -263,6 +265,7 @@ void reverse() {
     
     }
     if (realPosRV <= threshold_tile_minus && realPosLV+250 >= threshold_tile_plus) {
+      Serial.println("done#");
       break;
     }
   }
@@ -290,15 +293,14 @@ void right() {
     realPosLV = EncoderLV.read();
     realPosRV = EncoderRV.read();
     realPosRH = EncoderRH.read();
-    Serial.println(realPosRV);
-    if (realPosRV <= threshold_turn_minus) {
+    if (realPosRV <= threshold_turn_minus+100) {
       
       digitalWrite(ERV,LOW);
       digitalWrite(MRV,LOW);
       digitalWrite(ERH,LOW);
       digitalWrite(MRH,LOW);
     }
-    if (realPosLV <= threshold_turn_minus) {
+    if (realPosLV <= threshold_turn_minus+100) {
       
       digitalWrite(ELV, LOW);
       digitalWrite(MLV, LOW);
@@ -307,6 +309,7 @@ void right() {
     
     }
     if (realPosRV <= threshold_turn_minus && realPosLV-250 <= threshold_turn_minus) {
+      Serial.println("done#");
       break;
     }
   }
@@ -334,14 +337,14 @@ void left(){
     realPosLV = EncoderLV.read();
     realPosRV = EncoderRV.read();
     realPosRH = EncoderRH.read();
-    if (realPosRV >= threshold_tile_plus) {
+    if (realPosRV >= threshold_turn_plus-155) {
       
       digitalWrite(ERV,LOW);
       digitalWrite(MRV,LOW);
       digitalWrite(ERH,LOW);
       digitalWrite(MRH,LOW);
     }
-    if (realPosLV+250 >= threshold_tile_plus) {
+    if (realPosLV+250 >= threshold_turn_plus-155) {
         
         digitalWrite(ELV, LOW);
         digitalWrite(MLV, LOW);
@@ -349,7 +352,8 @@ void left(){
         digitalWrite(MLH, LOW);
       
       }
-      if (realPosRV >= threshold_tile_plus  && realPosLV+250 >= threshold_tile_plus) {
+      if (realPosRV >= threshold_turn_plus+100  && realPosLV+250 >= threshold_turn_plus+100) {
+        Serial.println("done#");
         break;
       }
   }
@@ -382,9 +386,37 @@ void setup() {
 }
 
 void loop() {
+  read_data();
+  Serial.println(grayscale);
+  Serial.println(IRvorne);
+  Serial.println(IRlinksvorne);
+  if(grayscale >= 360){
+    Serial.println("Black");
+    reverse();
+    delay(1000);
+  }else if(IRvorne >= 8){
+    Serial.println("Straight");
+      straight();
+      delay(1000);
+   }else if(IRlinksvorne >= 8){
+    Serial.println("Left");
+      left();
+      delay(1000);
+   }else if(IRrechtsvorne >= 8.5){
+    Serial.println("Right");
+      right();
+      delay(1000);
+   }else{
+    Serial.println("Turn-Arround");
+    left();
+    delay(500);
+    left();
+    delay(1000);
+   }
 }
 
-void serialEvent() {
+/* Nicht benötigt für standalone Mode
+ void serialEvent() {
   while(Serial.available()) {
     message = Serial.readStringUntil('#');
     if (message == "pls") {
@@ -414,4 +446,4 @@ void serialEvent() {
       ausrichten();
     }
   }
-}
+}*/
